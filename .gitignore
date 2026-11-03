@@ -17,3 +17,13 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Original game data (copyrighted) - kept locally, regenerate with tools/
+*.tzx
+reference/extract/
+reference/disasm/alien.asm
+reference/listing/
+reference/loading_screen.png
+
+# Python
+__pycache__/

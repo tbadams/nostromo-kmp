@@ -1,6 +1,7 @@
 import sys
 mem = bytearray(0x10000)
-b = open('/Users/trevora/dev/hack2026/reference/extract/block4.bin','rb').read()
+from pathlib import Path
+b = (Path(__file__).resolve().parent.parent / 'reference/extract/block4.bin').read_bytes()
 mem[0x6000:0x6000+len(b)] = b
 def txt(i):
     return bytes(mem[0x6E3D+i*10:0x6E3D+i*10+10]).decode('latin1')
