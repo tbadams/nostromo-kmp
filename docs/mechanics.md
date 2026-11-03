@@ -34,9 +34,21 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 - Each of the 8 actors (the alien plus 7 crew) has an **action timer** (`record+0`). Each tick it counts down, and when it reaches 0 the queued action happens (`8C85` → `8CAE`, then the state table at `8454`).
 - So an order is "wait, then do it", not instant. Picking up and dropping items is the exception: those are instant.
 - **Idle characters are never checked.** A timer of 0 is skipped (`8C96`), so the obedience and panic checks (section 5) run only when an order's timer runs out.
-- **Length of a tick.** It isn't fixed. Each pass of the main loop either plays the door and grille sounds or runs a delay loop in their place (`L_8E60`, about 36 ms each).
-  - A quiet tick is therefore at least about 72 ms plus drawing time: roughly **10–12 ticks per second**. Ticks with sounds take longer.
-  - This is an estimate from counting CPU cycles, not a measurement. Timing the game in an emulator would settle it.
+- **Length of a tick.** It isn't fixed. Each pass of the main loop either plays the door and grille sounds or runs a delay loop in their place (`L_8E60`, about 36 ms each). So a quiet tick is at least about 72 ms plus drawing time, and ticks with sounds take longer.
+  - **Measured: about 13.5 ticks per second (74 ms per tick).** In a short game, oxygen took 59.37 s to fall from 7500 to 7400. That's 100 units at 8 ticks each (N = 4 crew removed), so 800 ticks.
+  - It matches the cycle count: two delay loops plus drawing.
+
+  | Event | Ticks | Real time |
+  |---|---|---|
+  | Crew move (Ripley) | 64 | ~4.7 s |
+  | Alien move | 80 | ~5.9 s |
+  | Grille removal (Ripley, slowest) | 180 | ~13 s |
+  | Jones moves / netted alien frozen | 255 | ~19 s |
+  | Self-destruct "5:00" | 6000 | ~7.4 min |
+  | Oxygen, long game (N = 1) | 15,000 | ~18.5 min |
+  | Oxygen, short game (N = 4) | 60,000 | ~74 min |
+
+  - **For the new game:** it runs at a fixed 10 ticks per second (see architecture.md). Convert the original's durations to seconds (ticks ÷ 13.5) rather than reusing its tick counts.
 - **Action delay** (`8BE6`) = base delay + the character's speed penalty + their wound penalty:
 
 | Base action | Ticks |
@@ -246,7 +258,7 @@ score = Σ over attackers in good health (health > 2):
 - **Bug:** the count of fire-fighting attempts is never reset, so a later fire in the same room may go out at once.
 
 **Self-destruct:**
-- "Scuttle Nostromo" in the command centre starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all. At the estimated tick rate, that's roughly 8–10 real minutes.
+- "Scuttle Nostromo" in the command centre starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all, or about **7.4 real minutes** at the measured rate.
 - "Override" stops it and resets it to 5:00, and you can re-arm it any number of times.
 - If it reaches zero, the ship explodes.
 
