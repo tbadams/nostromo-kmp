@@ -5,7 +5,7 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 - Addresses in `code` are Z80 addresses in `reference/disasm/alien.asm`.
 - Detailed notes with more evidence are in `reference/notes/10_data_map.md`, `20_commands_crew.md` and `30_ai_timers_end.md`.
 - **Odds.** Every chance below is out of 16, because the random number routine returns 0–15. The routine is not uniform (see section 11), so treat all odds as approximate.
-- **Time.** Times are in **ticks**, one pass of the main loop. A tick is very roughly 0.1 s; this has not been measured.
+- **Time.** Times are in **ticks**, one pass of the main loop. A tick has no fixed length (see section 2).
 
 ---
 
@@ -33,6 +33,10 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 
 - Each of the 8 actors (the alien plus 7 crew) has an **action timer** (`record+0`). Each tick it counts down, and when it reaches 0 the queued action happens (`8C85` → `8CAE`, then the state table at `8454`).
 - So an order is "wait, then do it", not instant. Picking up and dropping items is the exception: those are instant.
+- **Idle characters are never checked.** A timer of 0 is skipped (`8C96`), so the obedience and panic checks (section 5) run only when an order's timer runs out.
+- **Length of a tick.** It isn't fixed. Each pass of the main loop either plays the door and grille sounds or runs a delay loop in their place (`L_8E60`, about 36 ms each).
+  - A quiet tick is therefore at least about 72 ms plus drawing time: roughly **10–12 ticks per second**. Ticks with sounds take longer.
+  - This is an estimate from counting CPU cycles, not a measurement. Timing the game in an emulator would settle it.
 - **Action delay** (`8BE6`) = base delay + the character's speed penalty + their wound penalty:
 
 | Base action | Ticks |
@@ -41,6 +45,9 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 | Attack | 40 |
 | Retry because the room is full | 32 |
 | Remove a grille | per character (below) |
+
+- **Full rooms.** When a move's timer runs out, `8F03` counts who is at the destination, bodies included. If a room already holds 3 people, or a duct segment holds anyone, the move is skipped but stays queued. The timer is reset to 32 + penalties, and the check repeats until there is space.
+- **Bug in the original:** `8BE6` takes the wound penalty from the character acting but the speed penalty from whoever is **selected** in the menu (`cur_char`). A retry that fires in the background can therefore use the wrong character's speed.
 
 | | Dallas | Kane | Ripley | Ash | Lambert | Parker | Brett |
 |---|---|---|---|---|---|---|---|
@@ -59,7 +66,9 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
   - Middle ↔ Lower: Corridor 2 – Cargo Pod 2
 - **Duct network** (`72A2`): a second map running parallel to the rooms.
   - Each room has a duct segment. You get from the room into its duct through a **grille**.
-  - Duct exits are N, E, S and W. There is also a 5th link that only the AI uses.
+  - Each duct segment stores 5 exits. The menu offers only the first four (N, E, S, W).
+  - The random-move routine (`8F6D`) picks from all five. It is used by the alien, the revealed android, panicking crew and a fleeing alien. It weights the 5th slot 4/16 against 3/16 for each of the others.
+  - Usually the 5th exit repeats one of the first four, which just makes the AI more likely to go that way. The one real AI-only route is **Engine #2 duct → Life Support duct**, which crosses decks. Crew can go the other way (Life Support W) but not back.
   - The ducts cut between decks in three places, and two duct links are one-way. So the ducts give shortcuts that the walking map doesn't.
 - **Grilles** (`757C`): at the start all are in place except one (Corridor 6). Removing a grille takes time, and the alien removes them too.
 - **Capacity** (`8F03`): a room holds at most **3** people (dead bodies count) and a duct segment holds **1**. Anyone ordered into a full space waits and tries again.
@@ -115,7 +124,7 @@ So company of brave crew lifts morale, and company of frightened crew drags it d
 
 **Labels:** 0 Broken, 1 Shaken, 2 Uneasy, 3 Stable, 4+ Confident.
 
-**Obedience gate** (`8EE3`), checked before every crew action:
+**Obedience gate** (`8EE3`), checked when a crew member's order is about to happen. Crew with no order are never checked, so a Broken crew member left alone just stands still, even under attack. Panic happens only when you give them an order.
 - **Morale 0 (Broken):** the character panics. They drop everything, run to a random neighbouring room and ignore the order.
 - **Morale below 2:** won't attack and won't enter or travel ducts.
 - **Health below 2:** can't attack.
@@ -130,6 +139,19 @@ So company of brave crew lifts morale, and company of frightened crew drags it d
 2. Otherwise, if the room's grille is in place: 3/16 chance to remove it (timer 50). You hear this.
 3. Otherwise, if the grille is open: 6/16 chance to go into or out of the duct (timer 50).
 4. Otherwise it moves to a random exit (timer 80). The exit table is padded with the room itself, so it often stays put. When it stays in a room (not a duct), the room takes **+5% damage**.
+
+**Speed.** The alien has no speed or wound penalty. Its timers are fixed, and damage never slows it.
+
+| Action | Alien (ticks) | Crew (ticks) |
+|---|---|---|
+| Move | 80 | 64 + 0–10 |
+| Remove a grille | 50 | 80–180 |
+| Go through a grille | 50 | 64 + 0–10 |
+| Attack | 60 | 40 + penalties |
+| Wander after finding no one to attack | 40 | – |
+| After fleeing | 0 (acts at once) | – |
+
+It walks more slowly than any healthy crew member, but gets through grilles 1.6–3.6 times faster. The ducts are where it has the edge.
 
 **Other rules:**
 - **Start:** inside a random duct, chosen from 16 entries (`A18E`).
@@ -224,7 +246,7 @@ score = Σ over attackers in good health (health > 2):
 - **Bug:** the count of fire-fighting attempts is never reset, so a later fire in the same room may go out at once.
 
 **Self-destruct:**
-- "Scuttle Nostromo" in the command centre starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all.
+- "Scuttle Nostromo" in the command centre starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all. At the estimated tick rate, that's roughly 8–10 real minutes.
 - "Override" stops it and resets it to 5:00, and you can re-arm it any number of times.
 - If it reaches zero, the ship explodes.
 
@@ -272,6 +294,7 @@ These mechanics are worth keeping, with the setting, names and look replaced by 
 
 Things to change or fix:
 - An enemy that only wanders randomly makes the endgame grindy. Give it some light pursuit, attraction to noise, or a preference for isolated crew.
-- Fix the oxygen rate (it drains fastest with one missing), the fire counter that never resets, and the dead tracker bonus.
+- Fix the oxygen rate (it drains fastest with one missing), the fire counter that never resets, the dead tracker bonus, and the speed penalty taken from the wrong character.
+- Decide whether crew with no orders should react on their own, for example a Broken crew member fleeing an attack. In the original they don't.
 - Use a proper random number generator.
 - Consider limited healing, or a medbay that trades time for health.
