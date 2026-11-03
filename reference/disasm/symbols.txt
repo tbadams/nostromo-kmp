@@ -1,0 +1,142 @@
+; Symbol names for alien.asm.  Format:  ADDR  NAME  [; comment]
+; Consumed by: tools/z80dis.py --symbols reference/disasm/symbols.txt ...
+; Only names that are confirmed belong here; mark guesses with (?) in the comment.
+
+; ---- code ----
+8E69  main                ; entry point (loader does LD BC,8E69h / RET -> USR)
+8E81  main_loop           ; per-tick subsystem calls, then JR main_loop
+7A23  draw_room_view      ; clears attrs, picks deck graphic by (7A0Bh), blits tiles
+7A89  draw_tile           ; 8x8 tile from 68F5h + A*8 to screen ptr (7A19h)
+7AB9  init_screen         ; last init call before main_loop
+7B92  print_name10        ; print 10-char entry A from name_table
+7BCA  print_char_name     ; print FF-terminated character name A from char_names
+7BE9  select_char_room    ; IX = char_records + 8*(7A09h); sets cur_room, cur_deck
+7C0F  build_exit_list     ; copies room's 5 connections into 73C0h
+7C34  build_item_list     ; items whose location == cur_room -> 750Ah
+8818  dispatch_mode       ; JP via mode_table[(7A14h) menu mode]
+8C85  update_characters   ; loop over 8 char records, dispatch on +3 state
+8CAE  dispatch_state      ; JP via state_table[(IX+3)]
+A86F  dispatch_title      ; JP via title_table[(8393h)]
+AF0F  pause_game          ; called when key '1' held
+
+; ---- data ----
+68F5  tile_gfx            ; 8-byte tiles used by draw_tile
+6E3D  name_table          ; 10-char entries: rooms, items, decks, menu words
+71F3  room_exits          ; 5 bytes per room: connected room numbers
+734C  char_names          ; FF-terminated: ALIEN, Dallas, Kane, Ripley, Ash, Lambert, Parker, Brett
+737E  char_records        ; 8 x 8-byte records; 0 = Alien, 1..7 = crew
+74D1  room_deck           ; room -> deck (0 upper, 1 middle, 2 lower)
+759E  morale_labels       ; Dead .. Confident
+7A09  cur_char            ; selected character index
+7A0A  cur_room            ; room of selected character (masked 3Fh)
+7A0B  cur_deck            ; deck of cur_room
+7A14  menu_mode           ; 0 main, 1 character, 2/3 room list, 4 item pick
+7A19  scr_ptr             ; screen write pointer for draw_tile
+8402  mode_table          ; 5 handlers, one per menu mode
+840C  main_menu_rows      ; 18 row handlers for mode 0 (via 89F2)
+8430  char_menu_rows      ; 18 row handlers for mode 1 (via 89F2)
+8454  state_table         ; 8 character-state handler addresses
+A87F  title_table         ; 3 title-menu handlers (short/long game, intro)
+7A15  ship_flags          ; b0 destruct, b1/b2 airlock blown, b3-5 engine fire, b6 launch suppressed (?)
+7A21  rng_ptr             ; RNG memory pointer
+7536  room_damage         ; 2 ASCII digits/room (x10%)
+757C  grilles             ; 1 byte/room: FF in place, else removed
+72A2  duct_exits          ; 5 bytes/room: N,E,S,W,AI-only
+74F4  item_locations      ; 22 entries: room, 80h+char carried, A0h+char in use, FF gone
+7520  item_morale         ; morale bonus per item
+7382  alien_damage        ; char_records[0]+4; dies at 15
+8393  cursor_row          ; menu cursor
+83A5  android_ptr         ; pointer to android record
+83A7  android_idx         ; android char index (9 = none)
+83A8  android_active      ; FF once revealed
+83AA  jones_room          ; FF = captured
+83AB  jones_timer         ; move every 255 ticks
+83D2  item_charges        ; per item index
+83E2  cat_catch_diff      ; per char
+83EA  grille_time         ; per char
+83F2  wound_penalty       ; by health
+83FA  speed_penalty       ; per char
+95E6  oxygen_digits       ; 4 ASCII digits, starts 7500
+95D5  oxygen_reload       ; ticks per oxygen unit
+A18E  alien_start_ducts   ; 16 entries
+A19E  host_table          ; chestburster host choices
+A1AE  android_table       ; android choices
+A1BE  item_start          ; initial item locations
+A1E4  long_game_records   ; initial char records, long game
+A224  short_game_records  ; initial char records, short game
+
+; ---- code (from analysis) ----
+8335  rng_next            ; A = (++rng_ptr) AND 0Fh
+8340  rng_seed            ; rng_ptr = FRAMES
+877C  read_input          ; keys/joystick -> menu
+8897  blink_char_room     ; cosmetic map flash
+88C8  blink_location      ; cosmetic map flash
+895B  cmd_select_char
+898A  cmd_show_deck
+8996  cmd_indicate_loc
+89F2  dispatch_row        ; mode 0/1 row tables
+8A0A  mode_room_list
+8A36  cmd_move
+8A70  cmd_quit
+8A78  do_nothing          ; RET (state 0 / label rows)
+8A7B  cmd_swap_items
+8AE8  cmd_grille
+8AFA  mode_item_pick
+8B36  cmd_get_item
+8B8D  cmd_leave_item
+8BCB  cmd_attack_or_grille
+8BE6  set_action_timer    ; base + speed + wound penalty
+8C05  cmd_get_jones
+8CC2  st_move
+8D05  st_grille
+8D36  st_remove_grille
+8DBB  calc_morale         ; effective morale for a room
+8E4C  body_found_morale   ; -1 base morale to all crew
+8EE3  obedience_gate
+8F03  capacity_check      ; max 3 per room, 1 per duct
+8F38  panic
+8F6D  random_exit
+8F9B  bucket5             ; 0..15 -> 0..4 (3/3/3/3/4)
+8FFB  jones_update
+909A  alien_ai
+9138  queue_message
+91F3  message_ticker
+9275  start_attack
+9290  st_attack
+92D0  crew_hits_alien
+9468  flee_roll           ; contains dead tracker bonus at 94AC
+9526  add_room_damage
+95AD  ship_explodes
+95EB  per_tick_systems
+95FE  cmd_room_special
+9636  cmd_scuttle
+9653  cmd_override
+9681  cmd_hypersleep
+9692  cmd_fight_fire
+96BC  cmd_seal_lock
+96F5  cmd_blow_lock
+9780  st_hypersleep
+97BE  destruct_clock
+97F7  tracker_scan
+9881  fire_update
+9958  st_alien_attacks
+9A6B  oxygen_update
+9D14  cmd_launch
+9D7F  door_sound
+9F35  st_android_attacks
+9F7A  android_ai
+9FED  crew_hits_android
+A130  android_reveal_check
+A524  setup_long_game
+A58C  setup_common
+AC5D  end_alien_killed
+AC7F  end_launched
+ACD2  end_crew_gone
+ACF5  end_oxygen
+AD19  end_check
+ADEC  end_exploded
+AE6B  rating_crew         ; CRWRAT
+AE9A  rating_damage       ; DAMRAT
+AEB2  rating_time         ; TIMRAT
+AEC2  setup_short_game
+AF50  grille_sound
