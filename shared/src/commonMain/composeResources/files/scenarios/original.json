@@ -967,7 +967,8 @@
       "health": 15,
       "actionSeconds": {
         "move": 5.9,
-        "attack": 4.4
+        "attack": 4.4,
+        "prowl": 5.9
       }
     }
   ]

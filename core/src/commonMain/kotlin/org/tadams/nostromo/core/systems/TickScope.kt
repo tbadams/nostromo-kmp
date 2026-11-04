@@ -19,6 +19,21 @@ class TickScope(val tick: Long, val rules: Rules, private val dice: Dice) {
         events += event
     }
 
+    /**
+     * Picks one of [choices], each as likely as its weight. Logged like [roll]. Weights must be
+     * non-negative and not all zero.
+     */
+    fun <T> pickWeighted(choices: List<Pair<T, Int>>, reason: String): T {
+        val total = choices.sumOf { it.second }
+        require(total > 0 && choices.all { it.second >= 0 }) { "Weights must be non-negative and not all zero" }
+        var r = roll(total, reason)
+        for ((choice, weight) in choices) {
+            if (r < weight) return choice
+            r -= weight
+        }
+        error("unreachable")
+    }
+
     /** Roll 0 until [sides], logged as a hidden event so debug mode shows every roll and why. */
     fun roll(sides: Int, reason: String): Int {
         val result = dice.roll(sides)

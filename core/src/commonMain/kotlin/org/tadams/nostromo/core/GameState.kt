@@ -34,7 +34,7 @@ data class GameState(
             tick = tick,
             result = result,
             rooms = world.rooms.values.map { room ->
-                RoomState(room.id, room.name, room.deck, room.kind, room.exits.map { it.to })
+                RoomState(room.id, room.name, room.deck, room.kind, room.exits.map { it.to }, room.damagePercent)
             },
             actors = world.actors.values.map { actor ->
                 ActorState(
@@ -58,6 +58,8 @@ data class RoomState(
     val deck: String?,
     val kind: RoomKind,
     val exits: List<RoomId>,
+    /** Structural damage, 0-100%. */
+    val damagePercent: Int,
 )
 
 /** A character, creature or animal as the UI sees it. */

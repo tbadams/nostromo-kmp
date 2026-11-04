@@ -60,6 +60,8 @@ object ScenarioValidator {
             }
         }
         if (scenario.rules.attackDamage <= 0) add("rules.attackDamage must be positive")
+        if (scenario.rules.prowlDamagePercent < 0) add("rules.prowlDamagePercent must not be negative")
+        if (scenario.rules.prowlWeight < 0) add("rules.prowlWeight must not be negative")
         for ((type, seconds) in scenario.rules.actionSeconds) {
             if (seconds <= 0) add("rules.actionSeconds for $type must be positive")
         }

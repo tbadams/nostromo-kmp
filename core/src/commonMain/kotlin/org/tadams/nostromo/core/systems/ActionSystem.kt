@@ -2,15 +2,16 @@ package org.tadams.nostromo.core.systems
 
 import org.tadams.nostromo.core.Time
 import org.tadams.nostromo.core.action.Action
+import org.tadams.nostromo.core.action.ActionDefs
 import org.tadams.nostromo.core.event.FailReason
 import org.tadams.nostromo.core.event.GameEvent
-import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.ScheduledAction
 import org.tadams.nostromo.core.model.World
 
 /**
  * Starts queued actions, counts their timers down, and applies their effects when they finish.
+ * What each action is allowed to do and what it does comes from its [org.tadams.nostromo.core.action.ActionDef].
  *
  * Timing: an action lasting N ticks takes N ticks of game time. An order applied on tick t
  * completes its first action on tick t + N - 1; each queued action then takes its own N ticks.
@@ -32,13 +33,6 @@ internal object ActionSystem {
         }
     }
 
-    /** [target] goes down where they stand: whatever they were doing stops, and they never act again. */
-    private fun knockDown(target: Actor, visibility: Visibility, scope: TickScope) {
-        target.current = null
-        target.queue.clear()
-        scope.emit(GameEvent.ActorDown(scope.tick, target.id, visibility))
-    }
-
     /** Drops the current action (with no effect) and the queue. */
     fun cancel(actor: Actor, scope: TickScope) {
         val current = actor.current
@@ -51,17 +45,16 @@ internal object ActionSystem {
 
     /**
      * Starts [actor]'s next queued action, or fails and clears the queue if it isn't possible.
-     * Queued actions are only checked here, when they start; nothing re-checks the queue as the
-     * world changes.
+     * Queued actions are only checked here, when they start, and again when they land; nothing
+     * re-checks the queue in between.
      */
     private fun startNext(world: World, actor: Actor, scope: TickScope) {
         val next = actor.queue.removeFirstOrNull() ?: return
         // TODO decide whether to also check orders in Simulation.submit(), so the UI gets an immediate
         //  Rejected for impossible ones (not needed while the action bar only offers valid options).
-        val failure = problemWith(world, actor, next)
-        if (failure != null) {
-            actor.queue.clear()
-            scope.emit(GameEvent.ActionFailed(scope.tick, actor.id, next, failure, actor.selfVisibility()))
+        val problem = problemWith(world, actor, next)
+        if (problem != null) {
+            fail(actor, next, problem, scope)
             return
         }
         val total = duration(actor, next, scope)
@@ -69,20 +62,28 @@ internal object ActionSystem {
         scope.emit(GameEvent.ActionStarted(scope.tick, actor.id, next, total, actor.selfVisibility()))
     }
 
-    /** Why [action] can't start right now, or null if it can. */
-    private fun problemWith(world: World, actor: Actor, action: Action): FailReason? = when (action) {
-        is Action.Move ->
-            if (world.room(actor.room).exits.none { it.to == action.to }) FailReason.NOT_ADJACENT else null
-        is Action.Attack -> targetProblem(world, actor, action)
+    /**
+     * Re-checks [action] just before applying it, since the world may have changed while it ran
+     * (target left, room filled, item taken). If it's no longer possible it fails with no effect.
+     */
+    private fun complete(world: World, actor: Actor, action: Action, scope: TickScope) {
+        // TODO decide whether some failed re-checks should wait and retry instead of failing, as the
+        //  original's room-full rule does (mechanics.md §2). Add with room capacity.
+        val problem = problemWith(world, actor, action)
+        if (problem != null) {
+            fail(actor, action, problem, scope)
+            return
+        }
+        ActionDefs.complete(actor, world, action, scope)
     }
 
-    private fun targetProblem(world: World, actor: Actor, attack: Action.Attack): FailReason? {
-        val target = world.actors.getValue(attack.target)
-        return when {
-            target.isDown -> FailReason.TARGET_DOWN
-            target.room != actor.room -> FailReason.TARGET_NOT_HERE
-            else -> null
-        }
+    /** Capability first, then the action's own rules. */
+    private fun problemWith(world: World, actor: Actor, action: Action): FailReason? =
+        if (action.type !in actor.capabilities) FailReason.NOT_CAPABLE else ActionDefs.check(actor, world, action)
+
+    private fun fail(actor: Actor, action: Action, problem: FailReason, scope: TickScope) {
+        actor.queue.clear()
+        scope.emit(GameEvent.ActionFailed(scope.tick, actor.id, action, problem, actor.selfVisibility()))
     }
 
     /**
@@ -93,45 +94,5 @@ internal object ActionSystem {
         val base = actor.actionSeconds[action.type] ?: scope.rules.baseSeconds(action.type)
         // TODO add the wound penalty (mechanics.md §2: +1.2 s at health 3, +3.6 s at health 2) once actors have health.
         return Time.ticks(base + actor.speedPenaltySeconds)
-    }
-
-    /** Applies [action]'s effect on the world. */
-    private fun complete(world: World, actor: Actor, action: Action, scope: TickScope) {
-        // TODO decide whether to re-check every action here, just before applying it, since the world may
-        //  have changed while it ran (item taken, target left, room filled, airlock blown). A failed
-        //  re-check would either fail the action or wait and retry, as the original's room-full rule
-        //  does (mechanics.md §2). Attack re-checks its target below; moves can't go stale yet.
-        when (action) {
-            is Action.Move -> {
-                val from = actor.room
-                actor.room = action.to
-                val witnesses = world.witnesses(listOf(from, action.to))
-                scope.emit(GameEvent.ActorMoved(scope.tick, actor.id, from, action.to, Visibility.Perceived(witnesses)))
-            }
-            is Action.Attack -> {
-                // The one re-check done at completion so far: the target may have left or gone down
-                // while the attack was being made.
-                val problem = targetProblem(world, actor, action)
-                if (problem != null) {
-                    actor.queue.clear()
-                    scope.emit(GameEvent.ActionFailed(scope.tick, actor.id, action, problem, actor.selfVisibility()))
-                    return
-                }
-                val target = world.actors.getValue(action.target)
-                // TODO cut the log noise from attacks: today every hit, plus each attack starting and the
-                //  collapse, is its own line, so one fight floods the log. Report a fight as one entry when
-                //  it starts (e.g. "The creature is attacking X") and only escalate on a change, like the
-                //  original (mechanics.md §6: "attacking" at health 4+, "being wounded" at 2-3). Keep the
-                //  per-hit detail as Hidden events for debug. Also: don't announce a death unless another
-                //  crew member saw it. Today the victim counts as their own witness, so their collapse is
-                //  always logged; leaving it out is creepier and the original only told you if you had
-                //  that crew member selected.
-                // Work out who saw it before the hit lands, so a crew member who goes down still saw it.
-                val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
-                target.health = (target.health - scope.rules.attackDamage).coerceAtLeast(0)
-                scope.emit(GameEvent.AttackHit(scope.tick, actor.id, target.id, target.health, seenBy))
-                if (target.isDown) knockDown(target, seenBy, scope)
-            }
-        }
     }
 }

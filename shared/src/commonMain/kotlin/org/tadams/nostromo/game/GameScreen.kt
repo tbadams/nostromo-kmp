@@ -204,6 +204,11 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
             TerminalButton("Stop (Esc)", onClick = viewModel::cancel)
         }
         Spacer(Modifier.height(8.dp))
+        // TODO make groups of actions easier to tell apart: today attacks, moves (and later items,
+        //  grilles, room specials) are one undifferentiated list of identical buttons. E.g. a small
+        //  header or divider per action type, and/or a distinct colour or icon per group (attacks
+        //  amber). The list is already ordered by type (ActionDefs.all), so grouping by
+        //  option.action.type is enough.
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(ui.actions) { option ->
                 TerminalButton(option.label, onClick = { viewModel.order(option.action) })
@@ -312,4 +317,5 @@ private fun resultText(result: GameResult): String {
 private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Move -> "moving to ${game.room(action.to).name}"
     is Action.Attack -> "attacking ${game.actor(action.target).name}"
+    Action.Prowl -> "prowling"
 }

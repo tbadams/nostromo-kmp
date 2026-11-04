@@ -10,6 +10,7 @@ import org.tadams.nostromo.core.event.GameEvent.ActorMoved
 import org.tadams.nostromo.core.event.GameEvent.AttackHit
 import org.tadams.nostromo.core.event.GameEvent.DiceRolled
 import org.tadams.nostromo.core.event.GameEvent.GameOver
+import org.tadams.nostromo.core.event.GameEvent.RoomDamaged
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.model.RoomId
 import org.tadams.nostromo.core.scenario.Scenario
@@ -26,6 +27,7 @@ class EventText(scenario: Scenario) {
         is ActionFailed -> "${name(event.actor)} can't ${doing(event.action)}: ${reason(event.reason)}"
         is ActorMoved -> "${name(event.actor)} enters ${room(event.to)}"
         is AttackHit -> "${name(event.attacker)} hits ${name(event.target)}"
+        is RoomDamaged -> "Something is tearing at ${room(event.room)} (${event.damagePercent}% damaged)"
         is ActorDown -> "${name(event.actor)} is down"
         is GameOver -> when (event.result.ending) {
             Ending.CREATURE_KILLED -> "The creature is dead"
@@ -38,14 +40,17 @@ class EventText(scenario: Scenario) {
     fun option(action: Action): String = when (action) {
         is Action.Move -> "Move to ${room(action.to)}"
         is Action.Attack -> "Attack ${name(action.target)}"
+        Action.Prowl -> "Prowl"
     }
 
     private fun doing(action: Action): String = when (action) {
         is Action.Move -> "moving to ${room(action.to)}"
         is Action.Attack -> "attacking ${name(action.target)}"
+        Action.Prowl -> "prowling"
     }
 
     private fun reason(reason: FailReason): String = when (reason) {
+        FailReason.NOT_CAPABLE -> "not something they can do"
         FailReason.NOT_ADJACENT -> "no way through from here"
         FailReason.TARGET_NOT_HERE -> "they're not here"
         FailReason.TARGET_DOWN -> "they're already down"

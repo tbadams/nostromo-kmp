@@ -59,7 +59,7 @@ CREW = [
 # starts in a duct.
 CREATURE = {
     "id": "creature", "name": "Creature", "kind": "creature", "room": "corridor-4-duct",
-    "brain": "wumpus", "health": 15, "actionSeconds": {"move": 5.9, "attack": 4.4},
+    "brain": "wumpus", "health": 15, "actionSeconds": {"move": 5.9, "attack": 4.4, "prowl": 5.9},
 }
 
 

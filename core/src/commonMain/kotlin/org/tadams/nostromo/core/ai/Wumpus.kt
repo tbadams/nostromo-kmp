@@ -6,21 +6,25 @@ import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.systems.TickScope
 
 /**
- * The original game's creature (docs/mechanics.md §6): it doesn't hunt. It attacks anyone standing
- * in its location, and otherwise wanders to a random neighbouring location, ducts included.
+ * The original game's creature (docs/mechanics.md §6): it doesn't hunt. It attacks crew standing
+ * in its location. Otherwise it either wanders to a random neighbouring location, ducts included,
+ * or lingers where it is (prowls), damaging the room. Dead ends make it linger more.
  *
- * Simplified for the vertical slice: no grille breaking, no carrying off bodies, no room damage
- * while idle, and every exit is equally likely (the original weights one of five slightly higher).
+ * Simplified for the vertical slice: no grille breaking and no carrying off bodies. The linger
+ * odds approximate the original's padded 5-slot exit tables rather than copying them per room.
  */
 internal object Wumpus : Brain {
-    override fun decide(actor: Actor, world: World, scope: TickScope): Action? {
-        val victims = world.occupants(actor.room).filter { it.isCrew && !it.isDown }
-        if (victims.isNotEmpty()) {
-            val victim = victims[scope.roll(victims.size, "${actor.name} picks a victim")]
-            return Action.Attack(victim.id)
-        }
-        val exits = world.room(actor.room).exits
-        if (exits.isEmpty()) return null
-        return Action.Move(exits[scope.roll(exits.size, "${actor.name} picks an exit")].to)
+    /** The original's exit tables had 5 slots; unused slots meant "stay". */
+    private const val SLOTS = 5
+
+    override fun decide(actor: Actor, options: List<Action>, world: World, scope: TickScope): Action? {
+        val attacks = options.filterIsInstance<Action.Attack>().filter { world.actors.getValue(it.target).isCrew }
+        if (attacks.isNotEmpty()) return attacks[scope.roll(attacks.size, "${actor.name} picks a victim")]
+
+        val moves = options.filterIsInstance<Action.Move>()
+        val prowlWeight = if (Action.Prowl in options) scope.rules.prowlWeight * (SLOTS - moves.size).coerceAtLeast(0) else 0
+        val weighted = moves.map { it to 1 } + listOf(Action.Prowl to prowlWeight).filter { it.second > 0 }
+        if (weighted.isEmpty()) return null
+        return scope.pickWeighted(weighted, "${actor.name} wanders or lingers")
     }
 }

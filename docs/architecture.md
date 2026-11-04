@@ -58,6 +58,7 @@ class Simulation(scenario: Scenario, seed: Long) {
 - `Command` is input from the player: `Order(actor, action)`, `Cancel(actor)`, `Select(actor)`, and so on.
 - `Action` is something an actor is doing, with a duration: `Move`, `UseGrille`, `RemoveGrille`, `Attack`, `PickUp`, `Hypersleep`, and so on. Each actor has a **current action** (with progress, which the UI shows) and a **queue**. Click-to-move pushes several `Move`s found by a breadth-first search over the room graph.
 - `availableActions(actor)` returns a flat list of options, e.g. "Get Laser Pistol" or "Attack Ash". The UI renders it directly, so there are no nested menus.
+- **One definition per action type** (`ActionDef`: `candidates`, `check`, `complete`) holds that action's rules. `Options.forActor` combines them with the actor's **capabilities** (which action types it can ever take; defaults per actor kind, overridable in the scenario) into the list of what it can do right now. The action bar and brains both use that list, and the scheduler runs the same `check` when an action starts and again when it lands, so what's offered, allowed and applied can't drift apart.
 - **Busy actors: a new order replaces the current one.** If you order a busy character to do something else, their current action and queue are cancelled and the new order starts. For example, "Get out of there!" interrupts a grille removal.
   - So the scheduler must support **cancelling** actions:
     - `Cancel(actor)` is also a command in its own right.
@@ -82,7 +83,7 @@ Each system is unit-testable on a tiny hand-built world.
 
 ### Brains (AI)
 
-- Behaviour is pluggable through `interface Brain { fun decide(actor, world, scope): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way.
+- Behaviour is pluggable through `interface Brain { fun decide(actor, options, world, scope): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way. A brain only chooses from `options` (what `Options` says the actor can do), as nostromo-js's AI chose from `Action.getChoices`; it never invents actions.
 - The first brains:
   - `RandomWanderCreature`: faithful to the original
   - `AndroidBrain`
@@ -99,6 +100,30 @@ Each system is unit-testable on a tiny hand-built world.
   - `Hidden`: AI decisions, rolls, timers, hidden roles. Shown only in debug.
 - The log in the UI filters by visibility. The debug switch just shows `Hidden` events too.
 - Text for events comes from one formatter in `:core`, `EventText`, so tests can assert on wording and every platform shows the same text.
+
+### Narrator: from events to the log
+
+Today each event maps to zero or one log line, decided on its own with no memory (`GameViewModel.toLogEntry` + `EventText.describe`). That can hide and reword events, but it can't tell a story: it can't merge several events into one line, react to what came before, update an earlier line, or tailor lines to who's watching.
+
+**Plan (build step 3):** a **narrator** in `:shared`, between the event stream and the log.
+- It receives every `GameEvent` in order and produces log entries. It's a small state machine with memory, e.g. "the fight between the creature and X is already reported".
+- It can:
+  - **merge** many events into one line: one "The creature is attacking X" instead of a line per hit
+  - **escalate** only on meaningful change: "is being wounded" when health crosses a threshold, as the original does (docs/mechanics.md §6)
+  - **update in place:** upgrade an earlier line rather than add a new one
+  - **delay or suppress** lines
+  - **tailor** lines to the selected crew member
+- All log quality-of-life changes live here, without touching the rules.
+
+**Responsibilities stay split:**
+- **`:core` reports the truth:** structured events with precise facts, and who could have perceived each one. That is a game rule, not presentation, so it stays in the simulation.
+  - Gap to fix: `Perceived` should tell an actor's own experience apart from witnesses, so the narrator can apply "don't announce a death nobody saw".
+- **`:shared` decides how to tell it:** grouping, wording, emphasis, timing.
+- **Debug** still shows every raw event, dimmed, beside the narrated log, so nothing is lost when the narrator merges or hides events.
+
+**First case:** fights (see the TODO in `AttackDef.complete`): one entry when a fight starts, a line when the victim gets worse, nothing per hit, and a death only if another crew member saw it.
+
+**Later:** the post-hackathon localization work moves `EventText`'s wording into string resources the narrator uses.
 
 ### Randomness
 
@@ -121,7 +146,7 @@ Each system is unit-testable on a tiny hand-built world.
 ```
 model/      World, Room, Link, Actor, Item, ids (value classes), ShipState
 scenario/   Scenario, Rules, ScenarioLoader, ScenarioValidator, Randomizer
-action/     Command, Action, ActionOption, availability, pathfinding
+action/     Command, Action, ActionDef + one per action type, Options, pathfinding
 systems/    the eight systems above + TickScope
 ai/         Brain + implementations
 event/      GameEvent, Visibility, EventText
@@ -157,7 +182,7 @@ Get a playable vertical slice working as early as possible, then add depth.
 
 1. **Skeleton:** the `:core` module; `World`, `Scenario` and `Rules` models; loader and validator; `Dice`; `Simulation` with timed `Move` and the event log; tests.
 2. **Vertical slice:** the creature wanders and attacks, crew move and attack with one weapon, a win/lose check. A minimal UI in `:shared` (crew tabs, flat action bar, log, a text map) shows the loop working end to end.
-3. **Crew depth:** items and inventory, morale and obedience, room capacity, the panic gate.
+3. **Crew depth:** first the narrator (see "Narrator: from events to the log"), so this step's new events are designed to be narrated; then items and inventory, morale and obedience, room capacity, the panic gate.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.

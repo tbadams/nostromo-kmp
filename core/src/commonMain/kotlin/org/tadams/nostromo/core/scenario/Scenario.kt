@@ -78,14 +78,22 @@ data class ActorDef(
      * [speedPenaltySeconds] is still added. E.g. each crew member's grille-removal time.
      */
     val actionSeconds: Map<ActionType, Double> = emptyMap(),
+    /**
+     * Which types of action this actor can ever take. Null means the default for its [kind]
+     * ([ActorKind.defaultCapabilities]).
+     */
+    val capabilities: Set<ActionType>? = null,
 )
 
 /** Broad type of actor. Only [CREW] take orders. */
 @Serializable
-enum class ActorKind {
-    @SerialName("crew") CREW,
-    @SerialName("creature") CREATURE,
-    @SerialName("animal") ANIMAL,
+enum class ActorKind(
+    /** What this kind of actor can do unless the scenario says otherwise. */
+    val defaultCapabilities: Set<ActionType>,
+) {
+    @SerialName("crew") CREW(setOf(ActionType.MOVE, ActionType.ATTACK)),
+    @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.PROWL)),
+    @SerialName("animal") ANIMAL(setOf(ActionType.MOVE)),
     // TODO Android?!?
 
 }

@@ -37,7 +37,10 @@ class World(
                 it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct())
             }
             val actors = scenario.actors.associate {
-                it.id to Actor(it.id, it.name, it.kind, it.room, it.brain, it.speedPenaltySeconds, it.actionSeconds, it.health)
+                it.id to Actor(
+                    it.id, it.name, it.kind, it.room, it.brain, it.speedPenaltySeconds, it.actionSeconds, it.health,
+                    capabilities = it.capabilities ?: it.kind.defaultCapabilities,
+                )
             }
             return World(rooms, actors)
         }
@@ -54,7 +57,15 @@ class Room(
     val deck: String?,
     val kind: RoomKind,
     val exits: List<Exit>,
-)
+) {
+    /**
+     * Structural damage, 0-100%. Only the creature's prowling adds to it so far.
+     * TODO room damage consequences (build step 5; mechanics.md §3): system failure warnings and
+     *  engine fires at 30%, a "structural damage" warning at 70%, the ship exploding at 100%. Also
+     *  weapon damage (laser +30%, harpoon +75%) and fire spreading.
+     */
+    var damagePercent: Int = 0
+}
 
 /** Anyone or anything that can act: crew, creature, animal. */
 class Actor(
@@ -70,6 +81,8 @@ class Actor(
     val actionSeconds: Map<ActionType, Double>,
     /** Hits left before going down. */
     var health: Int,
+    /** The types of action this actor can ever take. */
+    val capabilities: Set<ActionType>,
 ) {
     /** Out of action: collapsed crew, a dead creature. Down actors stay where they fell and do nothing. */
     val isDown get() = health <= 0

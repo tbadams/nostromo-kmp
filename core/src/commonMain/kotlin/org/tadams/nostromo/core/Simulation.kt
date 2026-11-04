@@ -1,9 +1,9 @@
 package org.tadams.nostromo.core
 
-import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.action.ActionOption
 import org.tadams.nostromo.core.action.Command
 import org.tadams.nostromo.core.action.CommandResult
+import org.tadams.nostromo.core.action.Options
 import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.model.ActorId
@@ -79,11 +79,7 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     /** Everything the actor specified by [actorId] could be ordered to do right now, for the action bar. */
     fun availableActions(actorId: ActorId): List<ActionOption> {
         val actor = world.actors[actorId] ?: return emptyList()
-        if (actor.isDown || result != null) return emptyList()
-        val attacks = world.occupants(actor.room)
-            .filter { it.id != actor.id && !it.isDown }
-            .map { Action.Attack(it.id) }
-        val moves = world.room(actor.room).exits.map { Action.Move(it.to) }
-        return (attacks + moves).map { ActionOption(text.option(it), it) }
+        if (result != null) return emptyList()
+        return Options.valid(actor, world).map { ActionOption(text.option(it), it) }
     }
 }

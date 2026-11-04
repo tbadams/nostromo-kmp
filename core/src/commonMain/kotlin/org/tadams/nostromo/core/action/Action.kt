@@ -19,6 +19,14 @@ sealed interface Action {
     data class Attack(val target: ActorId) : Action {
         override val type get() = ActionType.ATTACK
     }
+
+    /**
+     * Linger where you are, damaging the room (not a duct). The creature's version of the original's
+     * "move to its own room" (docs/mechanics.md §6).
+     */
+    data object Prowl : Action {
+        override val type get() = ActionType.PROWL
+    }
 }
 
 /**
@@ -32,6 +40,9 @@ enum class ActionType(val defaultSeconds: Double) {
 
     /** Original: 40 ticks for crew. */
     @SerialName("attack") ATTACK(3.0),
+
+    /** Original: the creature's 80-tick move, landing on its own room. */
+    @SerialName("prowl") PROWL(5.9),
 }
 
 /** Player input. Applied at the start of the next tick. */

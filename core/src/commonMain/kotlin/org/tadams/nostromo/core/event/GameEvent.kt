@@ -69,6 +69,14 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    /** [room] took damage, and is now at [damagePercent]. */
+    data class RoomDamaged(
+        override val tick: Long,
+        val room: RoomId,
+        val damagePercent: Int,
+        override val visibility: Visibility,
+    ) : GameEvent
+
     /** [actor] went down: crew collapse, the creature dies. */
     data class ActorDown(
         override val tick: Long,
@@ -97,6 +105,9 @@ sealed interface GameEvent {
 
 /** Why an action couldn't start. */
 enum class FailReason {
+    /** This actor can never take this type of action (e.g. the cat attacking). */
+    NOT_CAPABLE,
+
     /** The destination isn't connected to the actor's current location. */
     NOT_ADJACENT,
 
