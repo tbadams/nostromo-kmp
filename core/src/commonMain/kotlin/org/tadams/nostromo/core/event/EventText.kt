@@ -36,6 +36,12 @@ class EventText(scenario: Scenario) {
         is DiceRolled -> "Roll for ${event.reason}: ${event.result} (0-${event.sides - 1})"
     }
 
+    /** Narrator line when a fight between [attacker] and [target] starts. */
+    fun fight(attacker: ActorId, target: ActorId) = "${name(attacker)} is attacking ${name(target)}"
+
+    /** Narrator line when [target] of an ongoing fight is badly hurt. */
+    fun wounded(target: ActorId) = "${name(target)} is being wounded"
+
     /** Label for the action bar. */
     fun option(action: Action): String = when (action) {
         is Action.Move -> "Move to ${room(action.to)}"

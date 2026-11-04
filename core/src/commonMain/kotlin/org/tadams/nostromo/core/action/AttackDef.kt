@@ -26,14 +26,7 @@ internal object AttackDef : ActionDef<Action.Attack> {
 
     override fun complete(actor: Actor, world: World, action: Action.Attack, scope: TickScope) {
         val target = world.actors.getValue(action.target)
-        // TODO cut the log noise from attacks: today every hit, plus each attack starting and the
-        //  collapse, is its own line, so one fight floods the log. Report a fight as one entry when
-        //  it starts (e.g. "The creature is attacking X") and only escalate on a change, like the
-        //  original (mechanics.md §6: "attacking" at health 4+, "being wounded" at 2-3). Keep the
-        //  per-hit detail as Hidden events for debug. Also: don't announce a death unless another
-        //  crew member saw it. Today the victim counts as their own witness, so their collapse is
-        //  always logged; leaving it out is creepier and the original only told you if you had
-        //  that crew member selected.
+        // Every hit is reported; the log narrator in :shared (game/Narrator) folds a fight into a line or two.
         // Work out who saw it before the hit lands, so a crew member who goes down still saw it.
         val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
         target.health = (target.health - scope.rules.attackDamage).coerceAtLeast(0)

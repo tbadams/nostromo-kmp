@@ -117,11 +117,11 @@ Today each event maps to zero or one log line, decided on its own with no memory
 
 **Responsibilities stay split:**
 - **`:core` reports the truth:** structured events with precise facts, and who could have perceived each one. That is a game rule, not presentation, so it stays in the simulation.
-  - Gap to fix: `Perceived` should tell an actor's own experience apart from witnesses, so the narrator can apply "don't announce a death nobody saw".
+  - `Perceived` doesn't tell an actor's own experience apart from witnesses; the narrator treats an event's subject (e.g. the one going down) as not being a witness.
 - **`:shared` decides how to tell it:** grouping, wording, emphasis, timing.
 - **Debug** still shows every raw event, dimmed, beside the narrated log, so nothing is lost when the narrator merges or hides events.
 
-**First case:** fights (see the TODO in `AttackDef.complete`): one entry when a fight starts, a line when the victim gets worse, nothing per hit, and a death only if another crew member saw it.
+**First case (done, `game/Narrator.kt`):** fights: one entry when a fight starts, a line when the victim gets worse, nothing per hit, and a death only if another crew member saw it.
 
 **Later:** the post-hackathon localization work moves `EventText`'s wording into string resources the narrator uses.
 
@@ -205,3 +205,21 @@ Worth doing, but not needed for the hack.
 - **Busy actors:** a new order replaces the current one, and the scheduler supports cancelling (see "Actions and commands").
 - **First scenario:** the original's map structure (rooms, links, ducts, decks; see mechanics §3), with our own names and setting. Other maps can come later if time allows. The data-driven scenario format is meant to make that easy.
 - **Android:** keep the target building, but it's low priority. Desktop is for development and web is for sharing. Avoid anything that would break Android, but don't spend time testing it.
+- **Seconds in data, ticks in the simulation.** Scenario data gives durations in seconds; `:core` counts ticks.
+  - The original ran at about 13.5 ticks per second (measured; see mechanics §2), so convert its durations to seconds first.
+  - Displayed timers are real time: 7 minutes of ticks shows as 7:00.
+- **Actions are checked three times:** when offered, when they start, and again just before they land. A cancelled action has no partial effect.
+- **`Simulation` owns `tick` and `result`,** with private setters. They're kept out of `World` on purpose, because every system can change `World`.
+- **The creature never hunts,** as in the original. It attacks crew in its room, and otherwise wanders or prowls (lingers, damaging the room), weighted so dead ends make it linger.
+- **Brains only choose from `Options`;** they never invent actions.
+- **Crew stand-ins for the original's seven** (stats in mechanics §4; table in `tools/make_scenario.py`):
+  - Standard = Dallas, Broussard = Kane, Roby = Ripley, Bannon = Ash (inferred, unconfirmed), Melkonis = Lambert, Hunter = Parker, Faust = Brett.
+  - Health is the original's minus 1, because its crew collapse below 2.
+- **UI look:** terminal style. Green outlines with a faded fill, not Material defaults. The palette is in `shared/.../ui/Colors.kt`.
+
+### Known architectural debt
+
+Tagged with TODOs in the code:
+- **Speed values are in seconds on `Actor`.** That breaks "seconds in data, ticks in the simulation"; convert in `World.from()`.
+- **Nothing restricts who can be ordered** (`Simulation.submit()`). The android is crew until revealed and then acts like a creature, so the actor model probably needs separate allegiance, control and what the actor is.
+- **`ActionDefs` looks up definitions by type with one unchecked cast.** Moving `check`/`complete` onto the `Action` subtypes was considered and deferred; it's cheapest to do before step 3 adds a batch of actions.

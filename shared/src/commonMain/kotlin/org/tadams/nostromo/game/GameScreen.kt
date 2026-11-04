@@ -229,6 +229,9 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
     val selectedRoom = ui.selected?.let(ui.game::actor)?.room
 
     fun shown(room: RoomState) = room.kind == RoomKind.ROOM || ui.debug || room.id in seenRooms
+    // TODO hide unseen collapses, matching the narrator: today down crew show everywhere (here, the
+    //  crew tabs, the bottom bar) even if nobody saw them fall. Show them as down only once found;
+    //  ties into body-finding (step 3 morale, docs/mechanics.md §5).
     fun visibleIn(room: RoomState) = occupants(ui.game, room)
         .filter { it.kind == ActorKind.CREW || ui.debug || room.id in seenRooms }
 

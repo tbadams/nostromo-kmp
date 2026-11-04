@@ -18,7 +18,6 @@ import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.action.ActionOption
 import org.tadams.nostromo.core.action.Command
 import org.tadams.nostromo.core.event.GameEvent
-import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.Scenario
@@ -46,8 +45,10 @@ class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
     private val sim = Simulation(scenario, seed)
     private val crew = scenario.actors.filter { it.kind == ActorKind.CREW }.map { it.id }
 
-    /** Every event so far, kept so the debug switch can re-filter the whole log. */
-    private val allEvents = mutableListOf<GameEvent>()
+    private val narrator = Narrator(sim.text)
+
+    /** Every log entry so far, hidden ones included, so the debug switch can re-filter the whole log. */
+    private val allEntries = mutableListOf<LogEntry>()
 
     /** The log as last built; only rebuilt in full when the debug switch changes. */
     private var log = emptyList<LogEntry>()
@@ -101,7 +102,7 @@ class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
     }
 
     fun setDebug(on: Boolean) {
-        log = allEvents.mapNotNull { it.toLogEntry(on) }
+        log = if (on) allEntries.toList() else allEntries.filterNot { it.hidden }
         _state.update { snapshot(it.selected, on) }
     }
 
@@ -117,9 +118,9 @@ class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
     }
 
     private fun record(events: List<GameEvent>) {
-        allEvents += events
-        val debug = _state.value.debug
-        log = log + events.mapNotNull { it.toLogEntry(debug) }
+        val entries = events.flatMap(narrator::narrate)
+        allEntries += entries
+        log = log + if (_state.value.debug) entries else entries.filterNot { it.hidden }
     }
 
     private fun refresh() = _state.update { snapshot(it.selected, it.debug) }
@@ -131,17 +132,6 @@ class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
         log = log,
         debug = debug,
     )
-
-    private fun GameEvent.toLogEntry(debug: Boolean): LogEntry? {
-        val visible = isPlayerVisible()
-        return if (visible || debug) LogEntry(tick, sim.text.describe(this), hidden = !visible) else null
-    }
-
-    private fun GameEvent.isPlayerVisible() = when (val v = visibility) {
-        is Visibility.Perceived -> v.by.isNotEmpty()
-        Visibility.Ship -> true
-        Visibility.Hidden -> false
-    }
 
     private companion object {
         const val MAX_CATCH_UP = 50L
