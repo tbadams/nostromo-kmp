@@ -33,7 +33,7 @@ class Simulation(scenario: Scenario, seed: Long) {
     fun tick(): List<GameEvent>                   // advance one tick
     fun state(): GameState                        // immutable snapshot for the UI
     fun availableActions(actor: ActorId): List<ActionOption>  // drives the flat action bar
-    val outcome: Outcome?                         // non-null when the game is over
+    val result: GameResult?                       // non-null when the game is over
 }
 ```
 
@@ -126,7 +126,7 @@ systems/    the eight systems above + TickScope
 ai/         Brain + implementations
 event/      GameEvent, Visibility, EventText
 rng/        Dice
-Simulation.kt, GameState.kt, Outcome.kt
+Simulation.kt, GameState.kt, GameResult.kt
 ```
 
 ## UI integration (`:shared`)
@@ -163,6 +163,16 @@ Get a playable vertical slice working as early as possible, then add depth.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
 
 UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
+
+### Post-hackathon
+
+Worth doing, but not needed for the hack.
+
+- **Localizable strings.** Move all player-facing text out of `:core` into Compose Multiplatform string resources (`composeResources/values/strings.xml`, the KMP equivalent of Android's `strings.xml`, with `values-xx/` translations).
+  - `:core` emits only structured events and reasons, as it mostly does already, and stops building sentences: `EventText` and `ActionOption.label` go.
+  - A formatter in `:shared` turns each `GameEvent`, `FailReason` and action into a string resource with arguments.
+  - `:core` tests then check event fields, not English wording. A few `:shared` tests check the text.
+  - Note: `getString` is `suspend` outside composables, so log text is formatted in the UI layer rather than in the view model's tick loop.
 
 ## Decisions
 

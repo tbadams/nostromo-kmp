@@ -1,5 +1,6 @@
 package org.tadams.nostromo.core.event
 
+import org.tadams.nostromo.core.GameResult
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.model.RoomId
@@ -59,6 +60,30 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    /** [attacker] hit [target], who has [healthLeft] hits left. */
+    data class AttackHit(
+        override val tick: Long,
+        val attacker: ActorId,
+        val target: ActorId,
+        val healthLeft: Int,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] went down: crew collapse, the creature dies. */
+    data class ActorDown(
+        override val tick: Long,
+        val actor: ActorId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** The game is over. Everyone hears about it. */
+    data class GameOver(
+        override val tick: Long,
+        val result: GameResult,
+    ) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
     /** A random roll of 0 until [sides] for [reason]. Always [Visibility.Hidden]. */
     data class DiceRolled(
         override val tick: Long,
@@ -74,4 +99,10 @@ sealed interface GameEvent {
 enum class FailReason {
     /** The destination isn't connected to the actor's current location. */
     NOT_ADJACENT,
+
+    /** The target isn't in the same location. */
+    TARGET_NOT_HERE,
+
+    /** The target is already down. */
+    TARGET_DOWN,
 }

@@ -20,6 +20,7 @@ internal object ActionSystem {
     /** Advances every actor's action by one tick. */
     fun run(world: World, scope: TickScope) {
         for (actor in world.actors.values) {
+            if (actor.isDown) continue
             if (actor.current == null) startNext(world, actor, scope)
             val current = actor.current ?: continue
             current.remainingTicks--
@@ -29,6 +30,13 @@ internal object ActionSystem {
                 startNext(world, actor, scope)
             }
         }
+    }
+
+    /** [target] goes down where they stand: whatever they were doing stops, and they never act again. */
+    private fun knockDown(target: Actor, visibility: Visibility, scope: TickScope) {
+        target.current = null
+        target.queue.clear()
+        scope.emit(GameEvent.ActorDown(scope.tick, target.id, visibility))
     }
 
     /** Drops the current action (with no effect) and the queue. */
@@ -65,6 +73,16 @@ internal object ActionSystem {
     private fun problemWith(world: World, actor: Actor, action: Action): FailReason? = when (action) {
         is Action.Move ->
             if (world.room(actor.room).exits.none { it.to == action.to }) FailReason.NOT_ADJACENT else null
+        is Action.Attack -> targetProblem(world, actor, action)
+    }
+
+    private fun targetProblem(world: World, actor: Actor, attack: Action.Attack): FailReason? {
+        val target = world.actors.getValue(attack.target)
+        return when {
+            target.isDown -> FailReason.TARGET_DOWN
+            target.room != actor.room -> FailReason.TARGET_NOT_HERE
+            else -> null
+        }
     }
 
     /**
@@ -79,18 +97,40 @@ internal object ActionSystem {
 
     /** Applies [action]'s effect on the world. */
     private fun complete(world: World, actor: Actor, action: Action, scope: TickScope) {
-        // TODO decide whether to re-check the action here, just before applying it, since the world may
+        // TODO decide whether to re-check every action here, just before applying it, since the world may
         //  have changed while it ran (item taken, target left, room filled, airlock blown). A failed
         //  re-check would either fail the action or wait and retry, as the original's room-full rule
-        //  does (mechanics.md §2). Moves can't go stale yet, so add this with items or room capacity.
+        //  does (mechanics.md §2). Attack re-checks its target below; moves can't go stale yet.
         when (action) {
             is Action.Move -> {
                 val from = actor.room
                 actor.room = action.to
-                val witnesses = (world.occupants(from) + world.occupants(action.to))
-                    .filter { it.isCrew }
-                    .mapTo(mutableSetOf()) { it.id }
+                val witnesses = world.witnesses(listOf(from, action.to))
                 scope.emit(GameEvent.ActorMoved(scope.tick, actor.id, from, action.to, Visibility.Perceived(witnesses)))
+            }
+            is Action.Attack -> {
+                // The one re-check done at completion so far: the target may have left or gone down
+                // while the attack was being made.
+                val problem = targetProblem(world, actor, action)
+                if (problem != null) {
+                    actor.queue.clear()
+                    scope.emit(GameEvent.ActionFailed(scope.tick, actor.id, action, problem, actor.selfVisibility()))
+                    return
+                }
+                val target = world.actors.getValue(action.target)
+                // TODO cut the log noise from attacks: today every hit, plus each attack starting and the
+                //  collapse, is its own line, so one fight floods the log. Report a fight as one entry when
+                //  it starts (e.g. "The creature is attacking X") and only escalate on a change, like the
+                //  original (mechanics.md §6: "attacking" at health 4+, "being wounded" at 2-3). Keep the
+                //  per-hit detail as Hidden events for debug. Also: don't announce a death unless another
+                //  crew member saw it. Today the victim counts as their own witness, so their collapse is
+                //  always logged; leaving it out is creepier and the original only told you if you had
+                //  that crew member selected.
+                // Work out who saw it before the hit lands, so a crew member who goes down still saw it.
+                val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
+                target.health = (target.health - scope.rules.attackDamage).coerceAtLeast(0)
+                scope.emit(GameEvent.AttackHit(scope.tick, actor.id, target.id, target.health, seenBy))
+                if (target.isDown) knockDown(target, seenBy, scope)
             }
         }
     }

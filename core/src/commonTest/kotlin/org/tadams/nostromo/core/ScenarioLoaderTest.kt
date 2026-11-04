@@ -29,7 +29,7 @@ class ScenarioLoaderTest {
           ],
           "links": [ { "from": "bridge", "to": "bridge-duct", "kind": "grille" } ],
           "actors": [
-            { "id": "ripley", "name": "Ripley", "kind": "crew", "room": "bridge", "speedPenaltySeconds": 0.5 },
+            { "id": "roby", "name": "Roby", "kind": "crew", "room": "bridge", "speedPenaltySeconds": 0.5 },
             { "id": "creature", "name": "Creature", "kind": "creature", "room": "bridge-duct", "brain": "wumpus",
               "actionSeconds": { "move": 6.0 } }
           ]$rules
@@ -84,6 +84,6 @@ class ScenarioLoaderTest {
     @Test
     fun reportsDuplicateIds() {
         val bad = corridor().copy(actors = corridor().actors + corridor().actors.first())
-        assertEquals(listOf("Duplicate actor id 'ripley'"), ScenarioValidator.problems(bad))
+        assertEquals(listOf("Duplicate actor id 'roby'"), ScenarioValidator.problems(bad))
     }
 }

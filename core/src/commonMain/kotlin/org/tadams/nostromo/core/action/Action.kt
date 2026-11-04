@@ -14,6 +14,11 @@ sealed interface Action {
     data class Move(val to: RoomId) : Action {
         override val type get() = ActionType.MOVE
     }
+
+    /** Strike [target], who must be in the same location when the attack starts and when it lands. */
+    data class Attack(val target: ActorId) : Action {
+        override val type get() = ActionType.ATTACK
+    }
 }
 
 /**
@@ -24,6 +29,9 @@ sealed interface Action {
 enum class ActionType(val defaultSeconds: Double) {
     /** Original: 64 ticks. */
     @SerialName("move") MOVE(4.7),
+
+    /** Original: 40 ticks for crew. */
+    @SerialName("attack") ATTACK(3.0),
 }
 
 /** Player input. Applied at the start of the next tick. */

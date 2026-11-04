@@ -66,6 +66,9 @@ data class ActorDef(
     val room: RoomId,
     /** Id of the AI that drives this actor when idle, e.g. "wumpus". Null for crew. */
     val brain: String? = null,
+    /** Hits this actor can take before going down (crew collapse; the creature dies). */
+    // TODO abstract into stats
+    val health: Int = 4,
     /** Added to every action this actor takes: their personal slowness. */
     // TODO abstract into stats
     // TODO convert to tick based, refactoring surrounding code

@@ -23,22 +23,22 @@ class SimulationTest {
     @Test
     fun moveCompletesAfterItsDuration() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, Move(B)))
+        sim.submit(Order(ROBY, Move(B)))
 
         sim.runTicks(49)
-        assertEquals(A, sim.state().actor(RIPLEY).room)
-        assertEquals(49, sim.state().actor(RIPLEY).activity?.elapsedTicks)
+        assertEquals(A, sim.state().actor(ROBY).room)
+        assertEquals(49, sim.state().actor(ROBY).activity?.elapsedTicks)
 
         val events = sim.tick()
-        assertEquals(B, sim.state().actor(RIPLEY).room)
-        assertNull(sim.state().actor(RIPLEY).activity)
+        assertEquals(B, sim.state().actor(ROBY).room)
+        assertNull(sim.state().actor(ROBY).activity)
         assertIs<GameEvent.ActorMoved>(events.single())
     }
 
     @Test
     fun personalDelayAddsToMoveTime() {
         val sim = sim()
-        sim.submit(Order(PARKER, Move(B)))
+        sim.submit(Order(HUNTER, Move(B)))
         val started = sim.tick().filterIsInstance<GameEvent.ActionStarted>().single()
         assertEquals(60, started.totalTicks)
     }
@@ -47,11 +47,11 @@ class SimulationTest {
     fun actorsOwnBaseDurationReplacesTheScenariosButKeepsTheirPenalty() {
         val scenario = corridor().let { s ->
             s.copy(actors = s.actors.map {
-                if (it.id == PARKER) it.copy(actionSeconds = mapOf(ActionType.MOVE to 2.0)) else it
+                if (it.id == HUNTER) it.copy(actionSeconds = mapOf(ActionType.MOVE to 2.0)) else it
             })
         }
         val sim = Simulation(scenario, seed = 1)
-        sim.submit(Order(PARKER, Move(B)))
+        sim.submit(Order(HUNTER, Move(B)))
         val started = sim.tick().filterIsInstance<GameEvent.ActionStarted>().single()
         assertEquals(30, started.totalTicks, "2 s own base + 1 s penalty")
     }
@@ -59,7 +59,7 @@ class SimulationTest {
     @Test
     fun scenarioDefaultsToTheOriginalsMoveTime() {
         val sim = Simulation(corridor(Rules()), seed = 1)
-        sim.submit(Order(RIPLEY, Move(B)))
+        sim.submit(Order(ROBY, Move(B)))
         val started = sim.tick().filterIsInstance<GameEvent.ActionStarted>().single()
         assertEquals(47, started.totalTicks)
     }
@@ -67,56 +67,56 @@ class SimulationTest {
     @Test
     fun queuedMovesRunInOrder() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, listOf(Move(B), Move(C))))
+        sim.submit(Order(ROBY, listOf(Move(B), Move(C))))
 
         sim.runTicks(50)
-        assertEquals(B, sim.state().actor(RIPLEY).room)
-        assertEquals(Move(C), sim.state().actor(RIPLEY).activity?.action)
+        assertEquals(B, sim.state().actor(ROBY).room)
+        assertEquals(Move(C), sim.state().actor(ROBY).activity?.action)
 
         sim.runTicks(50)
-        assertEquals(C, sim.state().actor(RIPLEY).room)
+        assertEquals(C, sim.state().actor(ROBY).room)
     }
 
     @Test
     fun newOrderReplacesCurrentActionWithNoPartialEffect() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, listOf(Move(B), Move(C))))
+        sim.submit(Order(ROBY, listOf(Move(B), Move(C))))
         sim.runTicks(30)
 
-        sim.submit(Order(RIPLEY, Move(B)))
+        sim.submit(Order(ROBY, Move(B)))
         val events = sim.tick()
 
         assertIs<GameEvent.ActionCancelled>(events[0])
         assertIs<GameEvent.ActionStarted>(events[1])
-        val ripley = sim.state().actor(RIPLEY)
-        assertEquals(A, ripley.room, "a cancelled move must not move her")
-        assertEquals(1, ripley.activity?.elapsedTicks, "the new move starts from scratch")
-        assertTrue(ripley.queued.isEmpty(), "the old queue is dropped")
+        val roby = sim.state().actor(ROBY)
+        assertEquals(A, roby.room, "a cancelled move must not move him")
+        assertEquals(1, roby.activity?.elapsedTicks, "the new move starts from scratch")
+        assertTrue(roby.queued.isEmpty(), "the old queue is dropped")
     }
 
     @Test
     fun cancelStopsEverything() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, listOf(Move(B), Move(C))))
+        sim.submit(Order(ROBY, listOf(Move(B), Move(C))))
         sim.runTicks(10)
 
-        sim.submit(Cancel(RIPLEY))
+        sim.submit(Cancel(ROBY))
         val events = sim.tick()
 
         assertIs<GameEvent.ActionCancelled>(events.single())
         sim.runTicks(200)
-        assertEquals(A, sim.state().actor(RIPLEY).room)
-        assertNull(sim.state().actor(RIPLEY).activity)
+        assertEquals(A, sim.state().actor(ROBY).room)
+        assertNull(sim.state().actor(ROBY).activity)
     }
 
     @Test
     fun moveToNonAdjacentRoomFails() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, Move(C)))
+        sim.submit(Order(ROBY, Move(C)))
         val failed = sim.tick().single()
         assertIs<GameEvent.ActionFailed>(failed)
         assertEquals(FailReason.NOT_ADJACENT, failed.reason)
-        assertNull(sim.state().actor(RIPLEY).activity)
+        assertNull(sim.state().actor(ROBY).activity)
     }
 
     @Test
@@ -127,26 +127,26 @@ class SimulationTest {
     @Test
     fun moveIsSeenByCrewInBothRooms() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, Move(B)))
+        sim.submit(Order(ROBY, Move(B)))
         val moved = sim.runTicks(50).filterIsInstance<GameEvent.ActorMoved>().single()
-        assertEquals(Visibility.Perceived(setOf(RIPLEY, PARKER)), moved.visibility)
+        assertEquals(Visibility.Perceived(setOf(ROBY, HUNTER)), moved.visibility)
     }
 
     @Test
     fun availableActionsListExits() {
         val sim = sim()
-        assertEquals(listOf("Move to Bravo"), sim.availableActions(RIPLEY).map { it.label })
-        sim.submit(Order(RIPLEY, Move(B)))
+        assertEquals(listOf("Attack Hunter", "Move to Bravo"), sim.availableActions(ROBY).map { it.label })
+        sim.submit(Order(ROBY, Move(B)))
         sim.runTicks(50)
-        assertEquals(listOf("Move to Alpha", "Move to Charlie"), sim.availableActions(RIPLEY).map { it.label })
+        assertEquals(listOf("Move to Alpha", "Move to Charlie"), sim.availableActions(ROBY).map { it.label })
     }
 
     @Test
     fun sameSeedAndCommandsGiveSameEvents() {
         fun play(): List<GameEvent> {
             val sim = Simulation(corridor(), seed = 42)
-            sim.submit(Order(RIPLEY, listOf(Move(B), Move(C))))
-            sim.submit(Order(PARKER, Move(B)))
+            sim.submit(Order(ROBY, listOf(Move(B), Move(C))))
+            sim.submit(Order(HUNTER, Move(B)))
             return sim.runTicks(150)
         }
         assertEquals(play(), play())
@@ -155,8 +155,8 @@ class SimulationTest {
     @Test
     fun eventTextIsReadable() {
         val sim = sim()
-        sim.submit(Order(RIPLEY, Move(B)))
+        sim.submit(Order(ROBY, Move(B)))
         val texts = sim.runTicks(50).map(sim.text::describe)
-        assertEquals(listOf("Ripley starts moving to Bravo (5.0s)", "Ripley enters Bravo"), texts)
+        assertEquals(listOf("Roby starts moving to Bravo", "Roby enters Bravo"), texts)
     }
 }

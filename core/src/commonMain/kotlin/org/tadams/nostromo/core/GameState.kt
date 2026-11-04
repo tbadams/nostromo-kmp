@@ -11,6 +11,8 @@ import org.tadams.nostromo.core.scenario.RoomKind
 data class GameState(
     /** Ticks completed so far. */
     val tick: Long,
+    /** How the game ended, or null while it's still going. */
+    val result: GameResult?,
     /** In scenario order. */
     val rooms: List<RoomState>,
     /** In scenario order. */
@@ -21,12 +23,16 @@ data class GameState(
      */
     fun actor(id: ActorId): ActorState = actors.first { it.id == id }
 
+    /** Lookup room state by ID. */
+    fun room(id: RoomId): RoomState = rooms.first { it.id == id }
+
     companion object {
         /**
          * Returns an immutable snapshot of the active game World, specifying the current time tick.
          */
-        internal fun of(world: World, tick: Long) = GameState(
+        internal fun of(world: World, tick: Long, result: GameResult?) = GameState(
             tick = tick,
+            result = result,
             rooms = world.rooms.values.map { room ->
                 RoomState(room.id, room.name, room.deck, room.kind, room.exits.map { it.to })
             },
@@ -36,6 +42,7 @@ data class GameState(
                     name = actor.name,
                     kind = actor.kind,
                     room = actor.room,
+                    health = actor.health,
                     activity = actor.current?.let { ActivityState(it.action, it.elapsedTicks, it.totalTicks) },
                     queued = actor.queue.toList(),
                 )
@@ -59,11 +66,15 @@ data class ActorState(
     val name: String,
     val kind: ActorKind,
     val room: RoomId,
+    /** Hits left; 0 means down. */
+    val health: Int,
     /** What they're doing now, or null if idle. */
     val activity: ActivityState?,
     /** Actions waiting after the current one, e.g. the rest of a click-to-move path. */
     val queued: List<Action>,
-)
+) {
+    val isDown get() = health <= 0
+}
 
 /** An action in progress: [elapsedTicks] of [totalTicks] done. */
 data class ActivityState(val action: Action, val elapsedTicks: Int, val totalTicks: Int) {

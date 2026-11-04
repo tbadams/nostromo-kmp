@@ -17,8 +17,12 @@ class World(
     /** The room with [id]; it must exist. */
     fun room(id: RoomId): Room = rooms.getValue(id)
 
-    /** Every actor currently in [room], alive or not. */
+    /** Every actor currently in [room], down or not. */
     fun occupants(room: RoomId): List<Actor> = actors.values.filter { it.room == room }
+
+    /** Crew who can see and hear what happens in [rooms]: those standing in one of them, and up. */
+    fun witnesses(rooms: Collection<RoomId>): Set<ActorId> =
+        actors.values.filter { it.isCrew && !it.isDown && it.room in rooms }.mapTo(mutableSetOf()) { it.id }
 
     companion object {
 
@@ -33,7 +37,7 @@ class World(
                 it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct())
             }
             val actors = scenario.actors.associate {
-                it.id to Actor(it.id, it.name, it.kind, it.room, it.brain, it.speedPenaltySeconds, it.actionSeconds)
+                it.id to Actor(it.id, it.name, it.kind, it.room, it.brain, it.speedPenaltySeconds, it.actionSeconds, it.health)
             }
             return World(rooms, actors)
         }
@@ -64,7 +68,12 @@ class Actor(
     val speedPenaltySeconds: Double,
     /** This actor's own base durations for some actions; see [org.tadams.nostromo.core.scenario.ActorDef.actionSeconds]. */
     val actionSeconds: Map<ActionType, Double>,
+    /** Hits left before going down. */
+    var health: Int,
 ) {
+    /** Out of action: collapsed crew, a dead creature. Down actors stay where they fell and do nothing. */
+    val isDown get() = health <= 0
+
     /** What they're doing now, or null if idle. */
     var current: ScheduledAction? = null
 

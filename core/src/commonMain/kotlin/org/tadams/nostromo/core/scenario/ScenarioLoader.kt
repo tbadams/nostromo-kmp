@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.scenario
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import org.tadams.nostromo.core.ai.Brains
 import org.tadams.nostromo.core.model.RoomId
 
 /** A scenario couldn't be loaded or failed validation; [problems] lists every issue found. */
@@ -51,10 +52,14 @@ object ScenarioValidator {
         for (actor in scenario.actors) {
             if (actor.room !in known) add("Actor '${actor.id}' starts in unknown room '${actor.room}'")
             if (actor.speedPenaltySeconds < 0) add("Actor '${actor.id}' has negative speedPenaltySeconds")
+            if (actor.health <= 0) add("Actor '${actor.id}' health must be positive")
+            val brain = actor.brain
+            if (brain != null && brain !in Brains.ids) add("Actor '${actor.id}' has unknown brain '$brain'")
             for ((type, seconds) in actor.actionSeconds) {
                 if (seconds <= 0) add("Actor '${actor.id}' actionSeconds for $type must be positive")
             }
         }
+        if (scenario.rules.attackDamage <= 0) add("rules.attackDamage must be positive")
         for ((type, seconds) in scenario.rules.actionSeconds) {
             if (seconds <= 0) add("rules.actionSeconds for $type must be positive")
         }

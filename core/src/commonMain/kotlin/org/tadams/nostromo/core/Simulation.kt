@@ -13,7 +13,9 @@ import org.tadams.nostromo.core.rng.SeededDice
 import org.tadams.nostromo.core.scenario.Scenario
 import org.tadams.nostromo.core.scenario.ScenarioValidator
 import org.tadams.nostromo.core.systems.ActionSystem
+import org.tadams.nostromo.core.systems.BrainSystem
 import org.tadams.nostromo.core.systems.CommandSystem
+import org.tadams.nostromo.core.systems.EndSystem
 import org.tadams.nostromo.core.systems.TickScope
 
 /**
@@ -42,6 +44,10 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     var tick: Long = 0
         private set
 
+    /** How the game ended, or null while it's still going. Once set, [tick] does nothing. */
+    var result: GameResult? = null
+        private set
+
     /** Queues [command] to apply at the start of the next tick. */
     fun submit(command: Command): CommandResult {
         require(command.actor in world.actors) { "Unknown actor '${command.actor}'" }
@@ -53,26 +59,31 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
         return CommandResult.Accepted
     }
 
-    /** Advances one tick and returns what happened. */
+    /** Advances one tick and returns what happened. Does nothing once the game is over. */
     fun tick(): List<GameEvent> {
+        if (result != null) return emptyList()
         val scope = TickScope(tick, scenario.rules, dice)
         // Not thread-safe: a submit() between this copy and the clear() would be lost.
         CommandSystem.run(world, pending.toList(), scope)
         pending.clear()
         ActionSystem.run(world, scope)
+        BrainSystem.run(world, scope)
+        result = EndSystem.run(world, scope)
         tick++
         return scope.events
     }
 
     /** An immutable snapshot of the current state. */
-    fun state(): GameState = GameState.of(world, tick)
+    fun state(): GameState = GameState.of(world, tick, result)
 
     /** Everything the actor specified by [actorId] could be ordered to do right now, for the action bar. */
     fun availableActions(actorId: ActorId): List<ActionOption> {
         val actor = world.actors[actorId] ?: return emptyList()
-        return world.room(actor.room).exits.map { exit ->
-            val move = Action.Move(exit.to)
-            ActionOption(text.option(move), move)
-        }
+        if (actor.isDown || result != null) return emptyList()
+        val attacks = world.occupants(actor.room)
+            .filter { it.id != actor.id && !it.isDown }
+            .map { Action.Attack(it.id) }
+        val moves = world.room(actor.room).exits.map { Action.Move(it.to) }
+        return (attacks + moves).map { ActionOption(text.option(it), it) }
     }
 }

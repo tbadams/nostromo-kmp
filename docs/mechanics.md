@@ -105,7 +105,21 @@ Each character has an 8-byte record at `737E`; record 0 is the alien.
 | +6 | **effective morale** | – |
 | +7 | 0 active, 1 unfound body, 2 found body, FF removed | – |
 
-- Starting health is 4–6 and starting morale is 3–4 (`A1E4`).
+**Starting stats.** These are the records copied in at game start: `A1E4` for the long game, `A224` for the short game. Base and effective morale start equal. Health counts down to collapse below 2, so "hits to collapse" is health − 1.
+
+| | Dallas | Kane | Ripley | Ash | Lambert | Parker | Brett |
+|---|---|---|---|---|---|---|---|
+| Health (long game) | 6 | 5 | 4 | 5 | 6 | 6 | 5 |
+| Hits to collapse | 5 | 4 | 3 | 4 | 5 | 5 | 4 |
+| Base morale | 4 | 4 | 3 | 4 | 4 | 4 | 3 |
+| Starting room (long game) | Command centre | Command centre | Command centre | Mess | Mess | Mess | Airlock 1 |
+| Can be chestburster host (`A19E`) | yes (5/16) | yes (6/16) | – | – | yes (5/16) | – | – |
+| Can be the android (`A1AE`) | yes | yes | – | yes | – | yes | – |
+| In the short game | – | – | health 4, morale 3 | – | **health 4**, morale 3 | health 6, morale 4 | – |
+
+- In the short game, all three crew start in the command centre, and Lambert starts weaker (health 4 rather than 6).
+- After the chestburster host is removed, Brett is moved to the host's old room (`73B7`). The reason is unclear.
+- The other per-character stats (speed penalty, grille removal time, cat-catching difficulty) are in the table in §2.
 - **Health never recovers.** There is no healing code.
 - Each character has one **in-use** item and one **carried** item. Only the in-use item gives its morale bonus or works as a weapon.
 
