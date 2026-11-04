@@ -1,0 +1,77 @@
+package org.tadams.nostromo.core.event
+
+import org.tadams.nostromo.core.action.Action
+import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.RoomId
+
+/** Who can know about an event. The log shows [Hidden] events only in debug mode. */
+sealed interface Visibility {
+    /** Seen or heard by these crew. Empty means nobody noticed. */
+    data class Perceived(val by: Set<ActorId>) : Visibility
+
+    /** Ship-wide alarm or announcement. */
+    data object Ship : Visibility
+
+    /** Internal detail: AI decisions, dice rolls, timers, hidden roles. */
+    data object Hidden : Visibility
+}
+
+/** Something that happened in the simulation, for the log and the UI. */
+sealed interface GameEvent {
+    /** The tick it happened on. */
+    val tick: Long
+
+    /** Who could know about it. */
+    val visibility: Visibility
+
+    /** [actor] began [action], which will take [totalTicks]. */
+    data class ActionStarted(
+        override val tick: Long,
+        val actor: ActorId,
+        val action: Action,
+        val totalTicks: Int,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor]'s [action] was stopped before it finished, with no effect. */
+    data class ActionCancelled(
+        override val tick: Long,
+        val actor: ActorId,
+        val action: Action,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] couldn't start [action]; their remaining queue was dropped. */
+    data class ActionFailed(
+        override val tick: Long,
+        val actor: ActorId,
+        val action: Action,
+        val reason: FailReason,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] arrived in [to] from [from]. */
+    data class ActorMoved(
+        override val tick: Long,
+        val actor: ActorId,
+        val from: RoomId,
+        val to: RoomId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** A random roll of 0 until [sides] for [reason]. Always [Visibility.Hidden]. */
+    data class DiceRolled(
+        override val tick: Long,
+        val reason: String,
+        val sides: Int,
+        val result: Int,
+    ) : GameEvent {
+        override val visibility get() = Visibility.Hidden
+    }
+}
+
+/** Why an action couldn't start. */
+enum class FailReason {
+    /** The destination isn't connected to the actor's current location. */
+    NOT_ADJACENT,
+}

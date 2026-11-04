@@ -24,14 +24,14 @@
 ### Mutable world, immutable view
 
 - A `Simulation` owns a mutable `World` (rooms, actors, items, ship state). Writing rules as plain mutations, like `actor.health -= 1`, stays simple. Doing it through deeply nested `copy()` calls would be painful.
-- The UI never touches `World`. It gets an immutable `GameView` snapshot after each tick, built from data classes, so Compose can tell what changed.
+- The UI never touches `World`. It gets an immutable `GameState` snapshot after each tick, built from data classes, so Compose can tell what changed.
 - Determinism doesn't need immutability. It needs (a) one seeded RNG, (b) a fixed order for the systems that run each tick, and (c) every input arriving as a `Command`. A replay is just the seed plus a list of `(tick, command)`.
 
 ```kotlin
 class Simulation(scenario: Scenario, seed: Long) {
     fun submit(command: Command): CommandResult   // validated, queued for the next tick
     fun tick(): List<GameEvent>                   // advance one tick
-    fun view(): GameView                          // immutable snapshot for the UI
+    fun state(): GameState                        // immutable snapshot for the UI
     fun availableActions(actor: ActorId): List<ActionOption>  // drives the flat action bar
     val outcome: Outcome?                         // non-null when the game is over
 }
@@ -67,7 +67,7 @@ class Simulation(scenario: Scenario, seed: Long) {
 
 ### Systems, run in a fixed order each tick
 
-Each system is a small function over `World` plus a `TickContext` (dice, event sink, rules). The order is set once in `Simulation`, which mirrors the original's main loop (mechanics §11):
+Each system is a small function over `World` plus a `TickScope` (dice, event sink, rules). The order is set once in `Simulation`, which mirrors the original's main loop (mechanics §11):
 
 1. `CommandSystem`: apply queued commands
 2. `ActionSystem`: count down timers and resolve finished actions, passing them through the obedience and panic gate
@@ -82,7 +82,7 @@ Each system is unit-testable on a tiny hand-built world.
 
 ### Brains (AI)
 
-- Behaviour is pluggable through `interface Brain { fun decide(actor, world, ctx): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way.
+- Behaviour is pluggable through `interface Brain { fun decide(actor, world, scope): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way.
 - The first brains:
   - `RandomWanderCreature`: faithful to the original
   - `AndroidBrain`
@@ -122,20 +122,20 @@ Each system is unit-testable on a tiny hand-built world.
 model/      World, Room, Link, Actor, Item, ids (value classes), ShipState
 scenario/   Scenario, Rules, ScenarioLoader, ScenarioValidator, Randomizer
 action/     Command, Action, ActionOption, availability, pathfinding
-systems/    the eight systems above + TickContext
+systems/    the eight systems above + TickScope
 ai/         Brain + implementations
 event/      GameEvent, Visibility, EventText
 rng/        Dice
-Simulation.kt, GameView.kt, Outcome.kt
+Simulation.kt, GameState.kt, Outcome.kt
 ```
 
 ## UI integration (`:shared`)
 
 - A `GameViewModel` holds the `Simulation`, runs a coroutine tick loop at the fixed 10 ticks per second, and exposes:
-  - `StateFlow<GameView>` for the current state
+  - `StateFlow<GameState>` for the current state
   - `StateFlow<List<LogEntry>>` for the log
   - `submit(command)` for input
-- The screen is made of separate composables: crew tabs, the action bar, the map (Canvas), the log, the stats sheet. Each reads only the part of `GameView` it needs.
+- The screen is made of separate composables: crew tabs, the action bar, the map (Canvas), the log, the stats sheet. Each reads only the part of `GameState` it needs.
 - Keyboard shortcuts (number keys, next/previous crew) and mouse clicks both turn into the same `Command`s.
 
 ## Testing
@@ -162,7 +162,7 @@ Get a playable vertical slice working as early as possible, then add depth.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
 
-UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameView` exists.
+UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
 
 ## Decisions
 
