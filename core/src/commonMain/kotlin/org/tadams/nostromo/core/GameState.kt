@@ -2,6 +2,7 @@ package org.tadams.nostromo.core
 
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.Grilles
 import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 import org.tadams.nostromo.core.model.World
@@ -45,7 +46,10 @@ data class GameState(
             tick = tick,
             result = result,
             rooms = world.rooms.values.map { room ->
-                RoomState(room.id, room.name, room.deck, room.kind, room.exits.map { it.to }, room.damagePercent)
+                RoomState(
+                    room.id, room.name, room.deck, room.kind, room.exits.map { it.to }, room.damagePercent,
+                    grilleRemoved = Grilles.roomOf(room.id, world)?.grilleRemoved,
+                )
             },
             actors = world.actors.values.map { actor ->
                 ActorState(
@@ -75,6 +79,8 @@ data class RoomState(
     val exits: List<RoomId>,
     /** Structural damage, 0-100%. */
     val damagePercent: Int,
+    /** Whether this location's grille (to its duct, or for a duct to its room) is off; null if it has none. */
+    val grilleRemoved: Boolean? = null,
 )
 
 /** A character, creature or animal as the UI sees it. */

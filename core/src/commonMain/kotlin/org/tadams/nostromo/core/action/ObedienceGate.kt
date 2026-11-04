@@ -15,7 +15,7 @@ import org.tadams.nostromo.core.systems.MoraleSystem
  * Crew left without orders are never checked, so a frightened crew member just stands there.
  *
  * TODO panic at morale 0 (drop everything, run to a random neighbouring location instead), and the
- *  original's in-duct panic (rip out the grille and climb out). Rest of build step 3.
+ *  original's in-duct panic (rip out the grille and climb out, now that grilles exist). Rest of build step 3.
  */
 internal object ObedienceGate {
 

@@ -10,6 +10,7 @@ import org.tadams.nostromo.core.event.GameEvent.ActorMoved
 import org.tadams.nostromo.core.event.GameEvent.AttackHit
 import org.tadams.nostromo.core.event.GameEvent.DiceRolled
 import org.tadams.nostromo.core.event.GameEvent.GameOver
+import org.tadams.nostromo.core.event.GameEvent.GrilleRemoved
 import org.tadams.nostromo.core.event.GameEvent.ItemDropped
 import org.tadams.nostromo.core.event.GameEvent.ItemSwapped
 import org.tadams.nostromo.core.event.GameEvent.ItemTaken
@@ -34,6 +35,7 @@ class EventText(scenario: Scenario) {
         is ActionFailed -> "${name(event.actor)} can't ${doing(event.action)}: ${reason(event.reason)}"
         is ActorMoved -> "${name(event.actor)} enters ${room(event.to)}"
         is AttackHit -> "${name(event.attacker)} hits ${name(event.target)}" + if (event.damage == 0) ", to no effect" else ""
+        is GrilleRemoved -> "${name(event.actor)} removes the grille in ${room(event.room)}"
         is ItemTaken -> "${name(event.actor)} picks up the ${item(event.item)}"
         is ItemDropped -> "${name(event.actor)} drops the ${item(event.item)}"
         is ItemSwapped -> "${name(event.actor)} swaps to the ${item(event.item)}"
@@ -52,11 +54,19 @@ class EventText(scenario: Scenario) {
     /** Narrator line when [target] of an ongoing fight is badly hurt. */
     fun wounded(target: ActorId) = "${name(target)} is being wounded"
 
-    /** Label for the action bar. */
+    /**
+     * Label for the action bar.
+     * TODO consider restoring the original's duct labels (docs/mechanics.md §3,
+     *  reference/notes/20_commands_crew.md §2): "Grille" for the way between a room and its duct,
+     *  rather than the name of where it leads, and North/East/South/West for moves along ducts,
+     *  rather than the next duct segment's name. Needs each duct link's direction from the original's
+     *  N/E/S/W duct table, which the scenario doesn't carry yet (tools/make_scenario.py drops it).
+     */
     fun option(action: Action): String = when (action) {
         is Action.Move -> "Move to ${room(action.to)}"
         is Action.Attack -> "Attack ${name(action.target)}"
         Action.Prowl -> "Prowl"
+        Action.RemoveGrille -> "Remove grille"
         is Action.Get -> "Get ${item(action.item)}"
         is Action.Drop -> "Drop ${item(action.item)}"
         is Action.Swap -> "Swap to ${item(action.item)}"
@@ -66,6 +76,7 @@ class EventText(scenario: Scenario) {
         is Action.Move -> "moving to ${room(action.to)}"
         is Action.Attack -> "attacking ${name(action.target)}"
         Action.Prowl -> "prowling"
+        Action.RemoveGrille -> "removing the grille"
         is Action.Get -> "picking up the ${item(action.item)}"
         is Action.Drop -> "dropping the ${item(action.item)}"
         is Action.Swap -> "swapping to the ${item(action.item)}"
@@ -84,6 +95,9 @@ class EventText(scenario: Scenario) {
         FailReason.HANDS_FULL -> "their hands are full"
         FailReason.NOT_HOLDING -> "they don't have it"
         FailReason.TOO_SCARED -> "too scared"
+        FailReason.GRILLE_IN_PLACE -> "the grille is in place"
+        FailReason.NO_GRILLE -> "there's no grille here"
+        FailReason.GRILLE_ALREADY_REMOVED -> "the grille is already off"
     }
 
     private fun name(id: ActorId) = actorNames[id] ?: id.value

@@ -33,7 +33,7 @@ internal interface ActionDef<A : Action> {
  */
 internal object ActionDefs {
     /** In menu order: the most urgent options first. */
-    val all: List<ActionDef<*>> = listOf(AttackDef, MoveDef, SwapDef, GetDef, DropDef, ProwlDef)
+    val all: List<ActionDef<*>> = listOf(AttackDef, MoveDef, RemoveGrilleDef, SwapDef, GetDef, DropDef, ProwlDef)
 
     private val byType: Map<ActionType, ActionDef<*>> = all.associateBy { it.type }
 

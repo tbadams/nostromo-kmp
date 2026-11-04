@@ -95,6 +95,14 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    /** [actor] removed [room]'s grille, opening the way between it and its duct. */
+    data class GrilleRemoved(
+        override val tick: Long,
+        val actor: ActorId,
+        val room: RoomId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
     /** [room] took damage, and is now at [damagePercent]. */
     data class RoomDamaged(
         override val tick: Long,
@@ -151,6 +159,15 @@ enum class FailReason {
 
     /** The actor doesn't hold that item (in the slot the action needs). */
     NOT_HOLDING,
+
+    /** A grille is in place on the way through. */
+    GRILLE_IN_PLACE,
+
+    /** There's no grille here to remove. */
+    NO_GRILLE,
+
+    /** The grille here is already off. */
+    GRILLE_ALREADY_REMOVED,
 
     /** Morale is too low to obey: crew below the threshold won't attack or go into ducts. */
     TOO_SCARED,

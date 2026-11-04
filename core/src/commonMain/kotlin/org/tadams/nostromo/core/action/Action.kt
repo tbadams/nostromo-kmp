@@ -22,6 +22,14 @@ sealed interface Action {
     }
 
     /**
+     * Remove the grille between this location and its room or duct, opening the way through. From
+     * either side.
+     */
+    data object RemoveGrille : Action {
+        override val type get() = ActionType.REMOVE_GRILLE
+    }
+
+    /**
      * Linger where you are, damaging the room (not a duct). The creature's version of the original's
      * "move to its own room" (docs/mechanics.md §6).
      */
@@ -56,6 +64,9 @@ enum class ActionType(val defaultSeconds: Double) {
 
     /** Original: 40 ticks for crew. */
     @SerialName("attack") ATTACK(3.0),
+
+    /** Original: 50 ticks for the creature; 80-180 for crew, set per crew member in the scenario. */
+    @SerialName("removeGrille") REMOVE_GRILLE(3.7),
 
     /** Original: the creature's 80-tick move, landing on its own room. */
     @SerialName("prowl") PROWL(5.9),

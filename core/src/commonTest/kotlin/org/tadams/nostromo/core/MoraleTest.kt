@@ -22,10 +22,11 @@ class MoraleTest {
 
     private val duct = RoomId("a-duct")
 
-    /** The corridor with weapons in A, a duct off A, and each crew member's base morale set. */
+    /** The corridor with weapons in A, a duct off A (grille already off), and each crew member's base morale set. */
     private fun scenario(roby: Int, hunter: Int): Scenario = corridor().withWeapons().let { s ->
         s.copy(
-            rooms = s.rooms + RoomDef(duct, "A duct", kind = RoomKind.DUCT),
+            rooms = s.rooms.map { if (it.id == A) it.copy(grilleRemoved = true) else it } +
+                RoomDef(duct, "A duct", kind = RoomKind.DUCT),
             links = s.links + LinkDef(A, duct, LinkKind.GRILLE),
             actors = s.actors.map {
                 when (it.id) {

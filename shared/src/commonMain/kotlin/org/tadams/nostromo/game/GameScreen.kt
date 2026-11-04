@@ -51,6 +51,7 @@ import org.tadams.nostromo.core.GameResult
 import org.tadams.nostromo.core.RoomState
 import org.tadams.nostromo.core.Time
 import org.tadams.nostromo.core.action.Action
+import org.tadams.nostromo.core.action.ActionType
 import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.scenario.ActorKind
@@ -143,22 +144,31 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
 @Composable
 private fun BottomBar(ui: GameUiState, modifier: Modifier) {
     val actor = ui.selected?.let(ui.game::actor)
-    Row(
-        modifier.border(1.dp, DimGreen).padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        if (actor != null) {
-            MonoText(actor.name, Amber, bold = true)
-            MonoText("in ${ui.game.room(actor.room).name}", Green)
-            MonoText(if (actor.isDown) "DOWN" else "health ${actor.health}", Green)
-            actor.morale?.let { MonoText("morale ${EventText.morale(it)} ($it)", Green) }
-            val held = listOfNotNull(
-                actor.inUse?.let { "${ui.game.item(it).name} (in use)" },
-                actor.carried?.let { ui.game.item(it).name },
-            )
-            MonoText("holding ${held.joinToString().ifEmpty { "nothing" }}", Green)
-            val here = ui.game.itemsIn(actor.room).map { it.name }
-            if (here.isNotEmpty()) MonoText("here: ${here.joinToString()}", Green)
+    Column(modifier.border(1.dp, DimGreen).padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            if (actor != null) {
+                MonoText(actor.name, Amber, bold = true)
+                MonoText("in ${ui.game.room(actor.room).name}", Green)
+                MonoText(if (actor.isDown) "DOWN" else "health ${actor.health}", Green)
+                actor.morale?.let { MonoText("morale ${EventText.morale(it)} ($it)", Green) }
+                val held = listOfNotNull(
+                    actor.inUse?.let { "${ui.game.item(it).name} (in use)" },
+                    actor.carried?.let { ui.game.item(it).name },
+                )
+                MonoText("holding ${held.joinToString().ifEmpty { "nothing" }}", Green)
+                val here = ui.game.itemsIn(actor.room).map { it.name }
+                if (here.isNotEmpty()) MonoText("here: ${here.joinToString()}", Green)
+            }
+        }
+        // TODO temporary: the selected crew member's own stats, while tuning. Remove or move to the stats screen.
+        val def = actor?.let { a -> ui.scenario.actors.firstOrNull { it.id == a.id } }
+        if (def != null) {
+            val rules = ui.scenario.rules
+            val grille = def.actionSeconds[ActionType.REMOVE_GRILLE] ?: rules.baseSeconds(ActionType.REMOVE_GRILLE)
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                MonoText("speed penalty +${def.speedPenaltySeconds}s", DimGreen)
+                MonoText("grille removal ${grille}s (+${def.speedPenaltySeconds}s)", DimGreen)
+            }
         }
     }
 }
@@ -253,7 +263,8 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
                 //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
                 //  visible because someone is there looks the same as one only debug reveals.
                 val colour = if (room.id == selectedRoom) Amber else if (room.kind == RoomKind.DUCT) DimGreen else Green
-                MonoText("  ${room.name.padEnd(22)} $names", colour)
+                val grille = if (room.kind == RoomKind.ROOM && room.grilleRemoved == true) " [grille off]" else ""
+                MonoText("  ${(room.name + grille).padEnd(22)} $names", colour)
             }
         }
     }
@@ -333,6 +344,7 @@ private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Move -> "moving to ${game.room(action.to).name}"
     is Action.Attack -> "attacking ${game.actor(action.target).name}"
     Action.Prowl -> "prowling"
+    Action.RemoveGrille -> "removing the grille"
     is Action.Get -> "picking up the ${game.item(action.item).name}"
     is Action.Drop -> "dropping the ${game.item(action.item).name}"
     is Action.Swap -> "swapping to the ${game.item(action.item).name}"

@@ -183,7 +183,7 @@ Get a playable vertical slice working as early as possible, then add depth.
 1. **Skeleton:** the `:core` module; `World`, `Scenario` and `Rules` models; loader and validator; `Dice`; `Simulation` with timed `Move` and the event log; tests.
 2. **Vertical slice:** the creature wanders and attacks, crew move and attack with one weapon, a win/lose check. A minimal UI in `:shared` (crew tabs, flat action bar, log, a text map) shows the loop working end to end.
 3. **Crew depth:** first the narrator (see "Narrator: from events to the log"), so this step's new events are designed to be narrated; then items and inventory, morale and obedience, room capacity, the panic gate.
-   - Done: the narrator; items (one in use, one carried; instant Get, Drop and Swap); weapon damage from the in-use item (unarmed crew do nothing); effective morale (`systems/MoraleSystem.kt`); the obedience gate (`action/ObedienceGate.kt`: below morale 2, no attacking or entering ducts).
+   - Done: the narrator; items (one in use, one carried; instant Get, Drop and Swap); weapon damage from the in-use item (unarmed crew do nothing); effective morale (`systems/MoraleSystem.kt`); the obedience gate (`action/ObedienceGate.kt`: below morale 2, no attacking or entering ducts). Grilles: each room's grille to its duct blocks the way until removed (`RemoveGrille`, from either side; per-crew times; the creature tries it 3/16 of the time).
    - Left: panic at morale 0, base-morale events (ducts, finding bodies), room capacity.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.

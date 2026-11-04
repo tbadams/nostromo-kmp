@@ -49,6 +49,19 @@ object ScenarioValidator {
             if (to !in known) add("Link to unknown room '$to'")
             if (from == to) add("Link from '$from' to itself")
         }
+        val kinds = scenario.rooms.associate { it.id to it.kind }
+        val grilles = scenario.links.filter { it.kind == LinkKind.GRILLE }
+        for (grille in grilles) {
+            val ends = setOf(kinds[grille.from], kinds[grille.to])
+            if (ends != setOf(RoomKind.ROOM, RoomKind.DUCT)) add("Grille '${grille.from}'-'${grille.to}' must join a room and a duct")
+        }
+        duplicates(grilles.flatMap { listOf(it.from, it.to) }).forEach { add("Location '$it' has more than one grille") }
+        for (room in scenario.rooms) {
+            if (room.grilleRemoved && grilles.none { room.id == it.from || room.id == it.to }) {
+                add("Room '${room.id}' sets grilleRemoved but has no grille")
+            }
+            if (room.grilleRemoved && room.kind == RoomKind.DUCT) add("Duct '${room.id}' sets grilleRemoved; set it on the room")
+        }
         for (actor in scenario.actors) {
             if (actor.room !in known) add("Actor '${actor.id}' starts in unknown room '${actor.room}'")
             if (actor.speedPenaltySeconds < 0) add("Actor '${actor.id}' has negative speedPenaltySeconds")
@@ -72,6 +85,7 @@ object ScenarioValidator {
         }
         if (scenario.rules.attackDamage <= 0) add("rules.attackDamage must be positive")
         if (scenario.rules.prowlDamagePercent < 0) add("rules.prowlDamagePercent must not be negative")
+        if (scenario.rules.creatureGrilleOdds !in 0..16) add("rules.creatureGrilleOdds must be 0-16")
         if (scenario.rules.prowlWeight < 0) add("rules.prowlWeight must not be negative")
         for ((type, seconds) in scenario.rules.actionSeconds) {
             if (seconds <= 0) add("rules.actionSeconds for $type must be positive")

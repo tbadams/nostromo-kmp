@@ -70,7 +70,8 @@
     {
       "id": "corridor-6",
       "name": "Corridor 6",
-      "deck": "upper"
+      "deck": "upper",
+      "grilleRemoved": true
     },
     {
       "id": "corridor-7",
@@ -910,7 +911,10 @@
       "room": "command-centre",
       "health": 5,
       "speedPenaltySeconds": 0.5,
-      "morale": 4
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 7.4
+      }
     },
     {
       "id": "broussard",
@@ -919,7 +923,10 @@
       "room": "command-centre",
       "health": 4,
       "speedPenaltySeconds": 0.4,
-      "morale": 4
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 8.9
+      }
     },
     {
       "id": "roby",
@@ -927,7 +934,10 @@
       "kind": "crew",
       "room": "command-centre",
       "health": 3,
-      "morale": 3
+      "morale": 3,
+      "actionSeconds": {
+        "removeGrille": 13.3
+      }
     },
     {
       "id": "bannon",
@@ -936,7 +946,10 @@
       "room": "mess",
       "health": 4,
       "speedPenaltySeconds": 0.5,
-      "morale": 4
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 7.4
+      }
     },
     {
       "id": "melkonis",
@@ -945,7 +958,10 @@
       "room": "mess",
       "health": 5,
       "speedPenaltySeconds": 0.2,
-      "morale": 4
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 13.3
+      }
     },
     {
       "id": "hunter",
@@ -954,7 +970,10 @@
       "room": "mess",
       "health": 5,
       "speedPenaltySeconds": 0.7,
-      "morale": 4
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 5.9
+      }
     },
     {
       "id": "faust",
@@ -963,7 +982,10 @@
       "room": "airlock-1",
       "health": 4,
       "speedPenaltySeconds": 0.4,
-      "morale": 3
+      "morale": 3,
+      "actionSeconds": {
+        "removeGrille": 5.9
+      }
     },
     {
       "id": "creature",
@@ -975,7 +997,8 @@
       "actionSeconds": {
         "move": 5.9,
         "attack": 4.4,
-        "prowl": 5.9
+        "prowl": 5.9,
+        "removeGrille": 3.7
       }
     }
   ],

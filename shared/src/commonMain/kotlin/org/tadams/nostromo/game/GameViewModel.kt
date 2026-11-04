@@ -32,6 +32,8 @@ data class GameUiState(
     val actions: List<ActionOption>,
     val log: List<LogEntry>,
     val debug: Boolean,
+    /** The scenario being played, for static data such as crew stats. */
+    val scenario: Scenario,
 )
 
 /**
@@ -40,7 +42,7 @@ data class GameUiState(
  * Everything here runs on the main dispatcher (viewModelScope), which keeps calls into the
  * simulation on one thread, as [Simulation] requires.
  */
-class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
+class GameViewModel(private val scenario: Scenario, seed: Long) : ViewModel() {
 
     private val sim = Simulation(scenario, seed)
     private val crew = scenario.actors.filter { it.kind == ActorKind.CREW }.map { it.id }
@@ -131,6 +133,7 @@ class GameViewModel(scenario: Scenario, seed: Long) : ViewModel() {
         actions = selected?.let(sim::availableActions).orEmpty(),
         log = log,
         debug = debug,
+        scenario = scenario,
     )
 
     private companion object {

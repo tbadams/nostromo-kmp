@@ -59,6 +59,11 @@ data class RoomDef(
     /** Which deck it's on, for map layout. Free text, e.g. "upper". */
     val deck: String? = null,
     val kind: RoomKind = RoomKind.ROOM,
+    /**
+     * Whether this room's grille (its [LinkKind.GRILLE] link to its duct) starts removed. Grilles in
+     * place block the way until someone removes them. Original: all in place except Corridor 6's.
+     */
+    val grilleRemoved: Boolean = false,
 )
 
 /** Whether a location is a normal room or a duct segment. */
@@ -77,7 +82,10 @@ data class LinkDef(
     val oneWay: Boolean = false,
 )
 
-/** What a link physically is. Grilles join a room to its duct; duct links join duct segments. */
+/**
+ * What a link physically is. Grilles join a room to its duct (at most one each) and block the way
+ * while in place; duct links join duct segments.
+ */
 @Serializable
 enum class LinkKind {
     @SerialName("door") DOOR,
@@ -123,9 +131,12 @@ enum class ActorKind(
     val defaultCapabilities: Set<ActionType>,
 ) {
     @SerialName("crew") CREW(
-        setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.GET, ActionType.DROP, ActionType.SWAP),
+        setOf(
+            ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE,
+            ActionType.GET, ActionType.DROP, ActionType.SWAP,
+        ),
     ),
-    @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.PROWL)),
+    @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE, ActionType.PROWL)),
     @SerialName("animal") ANIMAL(setOf(ActionType.MOVE)),
     // TODO Android?!?
 

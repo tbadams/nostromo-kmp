@@ -53,7 +53,9 @@ class World(
                 if (!link.oneWay) exits.getValue(link.to) += Exit(link.from, link.kind)
             }
             val rooms = scenario.rooms.associate {
-                it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct())
+                it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct()).apply {
+                    grilleRemoved = it.grilleRemoved
+                }
             }
             val actors = scenario.actors.associate {
                 it.id to Actor(
@@ -87,6 +89,9 @@ class Room(
      *  weapon damage (laser +30%, harpoon +75%) and fire spreading.
      */
     var damagePercent: Int = 0
+
+    /** Whether this room's grille to its duct is off. Only meaningful for rooms with a grille. */
+    var grilleRemoved: Boolean = false
 }
 
 /** Anyone or anything that can act: crew, creature, animal. */

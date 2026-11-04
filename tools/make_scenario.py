@@ -18,6 +18,8 @@ mem[0x6000:0x6000 + len(block)] = block
 
 ROOM_EXITS = 0x71F3   # 5 bytes per room: walking connections (padded with the room itself)
 DUCT_EXITS = 0x72A2   # 5 bytes per room: duct connections N, E, S, W, AI-only
+# TODO if the original's North/East/South/West duct labels come back (see EventText.option), write
+#  each duct link's direction (its slot in DUCT_EXITS) into the scenario instead of discarding it.
 ROOM_DECK = 0x74D1    # 1 byte per room: 0 upper, 1 middle, 2 lower, 3 shuttle
 ITEM_ROOMS = 0xA1BE   # 1 byte per item: starting room (22 entries; the last two are the caught cat)
 SHUTTLE = 0x22
@@ -45,16 +47,20 @@ SHIP_DECKS = {"upper", "middle", "lower"}
 # original's seven. Health is "hits until down": the original's starting health minus one, since
 # its crew collapsed below 2. Speed penalties are its per-character delays (ticks) converted to
 # seconds (÷ 13.5). Start rooms follow the original's long game.
+# Grille removal time is the original's per-character value (ticks ÷ 13.5, docs/mechanics.md §2).
 CREW = [
-    # name,       original, start room,      health, speed penalty s, base morale
-    ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4),
-    ("Broussard", "Kane",    "command-centre", 4, 0.4, 4),
-    ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3),
-    ("Bannon",    "Ash",     "mess",           4, 0.5, 4),
-    ("Melkonis",  "Lambert", "mess",           5, 0.2, 4),
-    ("Hunter",    "Parker",  "mess",           5, 0.7, 4),
-    ("Faust",     "Brett",   "airlock-1",      4, 0.4, 3),
+    # name,       original, start room,      health, speed penalty s, base morale, grille removal s
+    ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4, 7.4),
+    ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9),
+    ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3),
+    ("Bannon",    "Ash",     "mess",           4, 0.5, 4, 7.4),
+    ("Melkonis",  "Lambert", "mess",           5, 0.2, 4, 13.3),
+    ("Hunter",    "Parker",  "mess",           5, 0.7, 4, 5.9),
+    ("Faust",     "Brett",   "airlock-1",      4, 0.4, 3, 5.9),
 ]
+
+# Every grille starts in place except this room's (docs/mechanics.md §3).
+OPEN_GRILLES = {"corridor-6"}
 
 # Item types, in the original's item-table order (docs/mechanics.md §7, reference/notes/10_data_map.md §4):
 # id, name, how many, damage to the creature, morale bonus while in use. Charges and special effects
@@ -75,7 +81,8 @@ ITEM_TYPES = [
 # starts in a duct.
 CREATURE = {
     "id": "creature", "name": "Creature", "kind": "creature", "room": "corridor-4-duct",
-    "brain": "wumpus", "health": 15, "actionSeconds": {"move": 5.9, "attack": 4.4, "prowl": 5.9},
+    "brain": "wumpus", "health": 15,
+    "actionSeconds": {"move": 5.9, "attack": 4.4, "prowl": 5.9, "removeGrille": 3.7},
 }
 
 
@@ -118,7 +125,8 @@ def links_from(directed, kind_of):
 
 def main(out_path):
     room_count = len(ROOMS)
-    rooms = [{"id": rid, "name": name, "deck": deck(i)} for i, (rid, name) in enumerate(ROOMS)]
+    rooms = [{"id": rid, "name": name, "deck": deck(i), **({"grilleRemoved": True} if rid in OPEN_GRILLES else {})}
+             for i, (rid, name) in enumerate(ROOMS)]
     rooms += [{"id": duct_id(i), "name": ROOMS[i][1] + " duct", "deck": deck(i), "kind": "duct"}
               for i in range(room_count - 1)]  # the shuttle has no duct
 
@@ -137,8 +145,9 @@ def main(out_path):
     links += links_from(ducts, lambda a, b: "duct")
 
     actors = [{"id": name.lower(), "name": name, "kind": "crew", "room": room, "health": health,
-               **({"speedPenaltySeconds": speed} if speed else {}), "morale": morale}
-              for name, _original, room, health, speed, morale in CREW]
+               **({"speedPenaltySeconds": speed} if speed else {}), "morale": morale,
+               "actionSeconds": {"removeGrille": grille}}
+              for name, _original, room, health, speed, morale, grille in CREW]
     actors.append(CREATURE)
 
     item_types = [{"id": tid, "name": name, "damage": damage, "morale": morale}

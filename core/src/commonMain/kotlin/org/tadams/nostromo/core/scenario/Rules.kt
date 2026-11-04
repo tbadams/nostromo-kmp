@@ -29,6 +29,8 @@ data class Rules(
      * original's padded 5-slot exit tables did. 0 means it never lingers.
      */
     val prowlWeight: Int = 1,
+    /** Chance in 16 that the creature, finding a grille in place, sets about removing it. Original: 3. */
+    val creatureGrilleOdds: Int = 3,
     /**
      * Each other crew member here who is up adds (their base morale − this) to effective morale, so
      * brave company lifts it and frightened company drags it down. Original: 2.
