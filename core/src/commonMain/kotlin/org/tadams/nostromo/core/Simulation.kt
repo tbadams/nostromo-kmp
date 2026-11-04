@@ -16,7 +16,7 @@ import org.tadams.nostromo.core.systems.ActionSystem
 import org.tadams.nostromo.core.systems.BrainSystem
 import org.tadams.nostromo.core.systems.CommandSystem
 import org.tadams.nostromo.core.systems.EndSystem
-import org.tadams.nostromo.core.systems.TickScope
+import org.tadams.nostromo.core.systems.MoraleSystem
 
 /**
  * The game. Randomness is delegated to the seeded [Dice].
@@ -68,13 +68,14 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
         pending.clear()
         ActionSystem.run(world, scope)
         BrainSystem.run(world, scope)
+        MoraleSystem.run(world, scope)
         result = EndSystem.run(world, scope)
         tick++
         return scope.events
     }
 
     /** An immutable snapshot of the current state. */
-    fun state(): GameState = GameState.of(world, tick, result)
+    fun state(): GameState = GameState.of(world, scenario.rules, tick, result)
 
     /** Everything the actor specified by [actorId] could be ordered to do right now, for the action bar. */
     fun availableActions(actorId: ActorId): List<ActionOption> {

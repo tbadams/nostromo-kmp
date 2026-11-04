@@ -73,7 +73,7 @@ Each system is a small function over `World` plus a `TickScope` (dice, event sin
 1. `CommandSystem`: apply queued commands
 2. `ActionSystem`: count down timers and resolve finished actions, passing them through the obedience and panic gate
 3. `BrainSystem`: AI for the creature, the android, the cat and crew reflexes (actors with an AI decide when they're idle)
-4. `MoraleSystem`: recompute effective morale where something changed
+4. `MoraleSystem`: the morale rules (base and effective morale, worked out on demand) and the events that change base morale
 5. `HazardSystem`: room damage, fire and spread, oxygen
 6. `ShipSystem`: destruct clock, airlocks, launch checks
 7. `DetectionSystem`: trackers, sounds, the cat's unease
@@ -147,11 +147,11 @@ Today each event maps to zero or one log line, decided on its own with no memory
 model/      World, Room, Link, Actor, Item, ids (value classes), ShipState
 scenario/   Scenario, Rules, ScenarioLoader, ScenarioValidator, Randomizer
 action/     Command, Action, ActionDef + one per action type, Options, pathfinding
-systems/    the eight systems above + TickScope
+systems/    the eight systems above
 ai/         Brain + implementations
 event/      GameEvent, Visibility, EventText
 rng/        Dice
-Simulation.kt, GameState.kt, GameResult.kt
+Simulation.kt, TickScope.kt, GameState.kt, GameResult.kt
 ```
 
 ## UI integration (`:shared`)
@@ -183,6 +183,8 @@ Get a playable vertical slice working as early as possible, then add depth.
 1. **Skeleton:** the `:core` module; `World`, `Scenario` and `Rules` models; loader and validator; `Dice`; `Simulation` with timed `Move` and the event log; tests.
 2. **Vertical slice:** the creature wanders and attacks, crew move and attack with one weapon, a win/lose check. A minimal UI in `:shared` (crew tabs, flat action bar, log, a text map) shows the loop working end to end.
 3. **Crew depth:** first the narrator (see "Narrator: from events to the log"), so this step's new events are designed to be narrated; then items and inventory, morale and obedience, room capacity, the panic gate.
+   - Done: the narrator; items (one in use, one carried; instant Get, Drop and Swap); weapon damage from the in-use item (unarmed crew do nothing); effective morale (`systems/MoraleSystem.kt`); the obedience gate (`action/ObedienceGate.kt`: below morale 2, no attacking or entering ducts).
+   - Left: panic at morale 0, base-morale events (ducts, finding bodies), room capacity.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
@@ -198,6 +200,10 @@ Worth doing, but not needed for the hack.
   - A formatter in `:shared` turns each `GameEvent`, `FailReason` and action into a string resource with arguments.
   - `:core` tests then check event fields, not English wording. A few `:shared` tests check the text.
   - Note: `getString` is `suspend` outside composables, so log text is formatted in the UI layer rather than in the view model's tick loop.
+- **Interrupting AI decisions.** Today, as in the original, a brain decides only when its actor is idle and then commits: crew who walk into the creature's room just after it chose to move see it leave. Options, each behind a `Rules` flag so the original's behaviour stays the default:
+  - **Interrupt on arrival:** when crew enter the creature's location, cancel its pending move or prowl so its brain decides again that tick. Cheap, since cancelling has no partial effect.
+  - **General re-check:** an optional brain hook ("abandon this?") run each tick or on chosen events. More flexible, more machinery.
+  - **Victim chosen when the attack lands:** the original picks whom to hit from whoever is present when the attack resolves; ours fixes the target at decision time, so an attack fails if that one target leaves even with others still there.
 
 ## Decisions
 
@@ -215,6 +221,8 @@ Worth doing, but not needed for the hack.
 - **Crew stand-ins for the original's seven** (stats in mechanics §4; table in `tools/make_scenario.py`):
   - Standard = Dallas, Broussard = Kane, Roby = Ripley, Bannon = Ash (inferred, unconfirmed), Melkonis = Lambert, Hunter = Parker, Faust = Brett.
   - Health is the original's minus 1, because its crew collapse below 2.
+- **Morale is worked out from the world, not stored.** Base morale is the actor's own plus the in-use item's bonus, and effective morale adds company and bodies (mechanics §5). The original updated both on item changes and arrivals; computing them live gives the same numbers without having to undo bonuses on every way an item can leave.
+- **The obedience gate doesn't hide options.** A frightened crew member is still offered "Attack" and refuses it when it starts (`TOO_SCARED`), as in the original, so the player learns why.
 - **UI look:** terminal style. Green outlines with a faded fill, not Material defaults. The palette is in `shared/.../ui/Colors.kt`.
 
 ### Known architectural debt

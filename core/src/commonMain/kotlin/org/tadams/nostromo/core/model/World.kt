@@ -4,6 +4,7 @@ import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.action.ActionType
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.scenario.ActorKind
+import org.tadams.nostromo.core.scenario.ItemTypeDef
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.scenario.Scenario
@@ -13,9 +14,27 @@ class World(
     val rooms: Map<RoomId, Room>,
     /** In scenario order; systems iterate in this order, which keeps runs deterministic. */
     val actors: Map<ActorId, Actor>,
+    /** In scenario order. */
+    val items: Map<ItemId, Item> = emptyMap(),
 ) {
     /** The room with [id]; it must exist. */
     fun room(id: RoomId): Room = rooms.getValue(id)
+
+    /** The item with [id]; it must exist. */
+    fun item(id: ItemId): Item = items.getValue(id)
+
+    /** Items lying on the floor of [room], in scenario order. */
+    fun itemsIn(room: RoomId): List<Item> = items.values.filter { it.room == room }
+
+    /** Takes item [id] off [actor] and puts it down where they are. Does nothing if they don't hold it. */
+    fun drop(actor: Actor, id: ItemId) {
+        when (id) {
+            actor.inUse -> actor.inUse = null
+            actor.carried -> actor.carried = null
+            else -> return
+        }
+        item(id).room = actor.room
+    }
 
     /** Every actor currently in [room], down or not. */
     fun occupants(room: RoomId): List<Actor> = actors.values.filter { it.room == room }
@@ -40,9 +59,12 @@ class World(
                 it.id to Actor(
                     it.id, it.name, it.kind, it.room, it.brain, it.speedPenaltySeconds, it.actionSeconds, it.health,
                     capabilities = it.capabilities ?: it.kind.defaultCapabilities,
+                    morale = it.morale,
                 )
             }
-            return World(rooms, actors)
+            val types = scenario.itemTypes.associateBy { it.id }
+            val items = scenario.items.associate { it.id to Item(it.id, types.getValue(it.type), it.room) }
+            return World(rooms, actors, items)
         }
     }
 }
@@ -83,7 +105,18 @@ class Actor(
     var health: Int,
     /** The types of action this actor can ever take. */
     val capabilities: Set<ActionType>,
+    /**
+     * Base morale before the in-use item's bonus. The rules for it, and for effective morale, are in
+     * [org.tadams.nostromo.core.systems.MoraleSystem].
+     */
+    var morale: Int = 0,
 ) {
+    /** The item in use: the one that counts as a weapon and for morale. */
+    var inUse: ItemId? = null
+
+    /** The spare, carried but not in use. */
+    var carried: ItemId? = null
+
     /** Out of action: collapsed crew, a dead creature. Down actors stay where they fell and do nothing. */
     val isDown get() = health <= 0
 
@@ -99,6 +132,9 @@ class Actor(
     /** Who knows about this actor's own actions: themselves if they're crew, otherwise nobody. */
     fun selfVisibility(): Visibility = if (isCrew) Visibility.Perceived(setOf(id)) else Visibility.Hidden
 }
+
+/** One item. [room] is where it lies, or null while someone holds it. */
+class Item(val id: ItemId, val type: ItemTypeDef, var room: RoomId?)
 
 /** An action in progress, counting down from [totalTicks]. */
 class ScheduledAction(val action: Action, val totalTicks: Int) {

@@ -39,7 +39,7 @@ class NarratorTest {
     private fun seen(by: List<ActorId> = emptyList()) = Visibility.Perceived(by.toSet())
 
     private fun hit(attacker: ActorId, target: ActorId, healthLeft: Int, by: List<ActorId> = listOf(target)) =
-        GameEvent.AttackHit(0, attacker, target, healthLeft, seen(by))
+        GameEvent.AttackHit(0, attacker, target, 1, healthLeft, seen(by))
 
     private fun shown(vararg events: GameEvent) =
         events.flatMap(narrator::narrate).filterNot { it.hidden }.map { it.text }

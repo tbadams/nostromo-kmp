@@ -909,7 +909,8 @@
       "kind": "crew",
       "room": "command-centre",
       "health": 5,
-      "speedPenaltySeconds": 0.5
+      "speedPenaltySeconds": 0.5,
+      "morale": 4
     },
     {
       "id": "broussard",
@@ -917,14 +918,16 @@
       "kind": "crew",
       "room": "command-centre",
       "health": 4,
-      "speedPenaltySeconds": 0.4
+      "speedPenaltySeconds": 0.4,
+      "morale": 4
     },
     {
       "id": "roby",
       "name": "Roby",
       "kind": "crew",
       "room": "command-centre",
-      "health": 3
+      "health": 3,
+      "morale": 3
     },
     {
       "id": "bannon",
@@ -932,7 +935,8 @@
       "kind": "crew",
       "room": "mess",
       "health": 4,
-      "speedPenaltySeconds": 0.5
+      "speedPenaltySeconds": 0.5,
+      "morale": 4
     },
     {
       "id": "melkonis",
@@ -940,7 +944,8 @@
       "kind": "crew",
       "room": "mess",
       "health": 5,
-      "speedPenaltySeconds": 0.2
+      "speedPenaltySeconds": 0.2,
+      "morale": 4
     },
     {
       "id": "hunter",
@@ -948,7 +953,8 @@
       "kind": "crew",
       "room": "mess",
       "health": 5,
-      "speedPenaltySeconds": 0.7
+      "speedPenaltySeconds": 0.7,
+      "morale": 4
     },
     {
       "id": "faust",
@@ -956,7 +962,8 @@
       "kind": "crew",
       "room": "airlock-1",
       "health": 4,
-      "speedPenaltySeconds": 0.4
+      "speedPenaltySeconds": 0.4,
+      "morale": 3
     },
     {
       "id": "creature",
@@ -970,6 +977,164 @@
         "attack": 4.4,
         "prowl": 5.9
       }
+    }
+  ],
+  "itemTypes": [
+    {
+      "id": "prod",
+      "name": "Electric Prod",
+      "damage": 1,
+      "morale": 1
+    },
+    {
+      "id": "incinerator",
+      "name": "Incinerator",
+      "damage": 1,
+      "morale": 2
+    },
+    {
+      "id": "tracker",
+      "name": "Tracker",
+      "damage": 1,
+      "morale": 0
+    },
+    {
+      "id": "extinguisher",
+      "name": "Fire Extinguisher",
+      "damage": 0,
+      "morale": 1
+    },
+    {
+      "id": "harpoon",
+      "name": "Harpoon Gun",
+      "damage": 5,
+      "morale": 2
+    },
+    {
+      "id": "laser",
+      "name": "Laser Pistol",
+      "damage": 2,
+      "morale": 2
+    },
+    {
+      "id": "net",
+      "name": "Net",
+      "damage": 0,
+      "morale": 0
+    },
+    {
+      "id": "cat-box",
+      "name": "Cat Box",
+      "damage": 0,
+      "morale": 0
+    },
+    {
+      "id": "spanner",
+      "name": "Spanner",
+      "damage": 1,
+      "morale": 1
+    }
+  ],
+  "items": [
+    {
+      "id": "prod-1",
+      "type": "prod",
+      "room": "lab-stores"
+    },
+    {
+      "id": "prod-2",
+      "type": "prod",
+      "room": "infirmary"
+    },
+    {
+      "id": "prod-3",
+      "type": "prod",
+      "room": "engineering-stores"
+    },
+    {
+      "id": "incinerator-1",
+      "type": "incinerator",
+      "room": "command-centre"
+    },
+    {
+      "id": "incinerator-2",
+      "type": "incinerator",
+      "room": "command-centre"
+    },
+    {
+      "id": "incinerator-3",
+      "type": "incinerator",
+      "room": "engineering"
+    },
+    {
+      "id": "tracker-1",
+      "type": "tracker",
+      "room": "command-centre"
+    },
+    {
+      "id": "tracker-2",
+      "type": "tracker",
+      "room": "engineering"
+    },
+    {
+      "id": "extinguisher-1",
+      "type": "extinguisher",
+      "room": "mess"
+    },
+    {
+      "id": "extinguisher-2",
+      "type": "extinguisher",
+      "room": "engine-1"
+    },
+    {
+      "id": "extinguisher-3",
+      "type": "extinguisher",
+      "room": "engine-2"
+    },
+    {
+      "id": "extinguisher-4",
+      "type": "extinguisher",
+      "room": "engine-3"
+    },
+    {
+      "id": "harpoon-1",
+      "type": "harpoon",
+      "room": "shuttle-bay"
+    },
+    {
+      "id": "laser-1",
+      "type": "laser",
+      "room": "armoury"
+    },
+    {
+      "id": "laser-2",
+      "type": "laser",
+      "room": "armoury"
+    },
+    {
+      "id": "laser-3",
+      "type": "laser",
+      "room": "armoury"
+    },
+    {
+      "id": "net-1",
+      "type": "net",
+      "room": "lab-stores"
+    },
+    {
+      "id": "cat-box-1",
+      "type": "cat-box",
+      "room": "laboratory"
+    },
+    {
+      "id": "spanner-1",
+      "type": "spanner",
+      "room": "stores-3"
+    },
+    {
+      "id": "spanner-2",
+      "type": "spanner",
+      "room": "engineering-stores"
     }
   ]
 }

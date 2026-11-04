@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.event
 import org.tadams.nostromo.core.GameResult
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 
 /** Who can know about an event. The log shows [Hidden] events only in debug mode. */
@@ -60,12 +61,37 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
-    /** [attacker] hit [target], who has [healthLeft] hits left. */
+    /** [attacker] hit [target] for [damage] (0 if their weapon does nothing), leaving [healthLeft]. */
     data class AttackHit(
         override val tick: Long,
         val attacker: ActorId,
         val target: ActorId,
+        val damage: Int,
         val healthLeft: Int,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] picked up [item]. */
+    data class ItemTaken(
+        override val tick: Long,
+        val actor: ActorId,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] put down [item]. */
+    data class ItemDropped(
+        override val tick: Long,
+        val actor: ActorId,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] put their carried [item] into use. */
+    data class ItemSwapped(
+        override val tick: Long,
+        val actor: ActorId,
+        val item: ItemId,
         override val visibility: Visibility,
     ) : GameEvent
 
@@ -116,4 +142,16 @@ enum class FailReason {
 
     /** The target is already down. */
     TARGET_DOWN,
+
+    /** The item isn't lying here. */
+    ITEM_NOT_HERE,
+
+    /** Both the in-use and carried slots are taken. */
+    HANDS_FULL,
+
+    /** The actor doesn't hold that item (in the slot the action needs). */
+    NOT_HOLDING,
+
+    /** Morale is too low to obey: crew below the threshold won't attack or go into ducts. */
+    TOO_SCARED,
 }

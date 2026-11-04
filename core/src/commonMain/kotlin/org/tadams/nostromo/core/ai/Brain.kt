@@ -3,7 +3,7 @@ package org.tadams.nostromo.core.ai
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
-import org.tadams.nostromo.core.systems.TickScope
+import org.tadams.nostromo.core.TickScope
 
 /**
  * Decides what an AI-driven actor does next. Asked only when the actor is idle.

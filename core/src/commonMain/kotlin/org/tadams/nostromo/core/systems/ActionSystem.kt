@@ -1,8 +1,10 @@
 package org.tadams.nostromo.core.systems
 
+import org.tadams.nostromo.core.TickScope
 import org.tadams.nostromo.core.Time
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.action.ActionDefs
+import org.tadams.nostromo.core.action.ObedienceGate
 import org.tadams.nostromo.core.event.FailReason
 import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.model.Actor
@@ -52,7 +54,7 @@ internal object ActionSystem {
         val next = actor.queue.removeFirstOrNull() ?: return
         // TODO decide whether to also check orders in Simulation.submit(), so the UI gets an immediate
         //  Rejected for impossible ones (not needed while the action bar only offers valid options).
-        val problem = problemWith(world, actor, next)
+        val problem = problemWith(world, actor, next) ?: ObedienceGate.refusal(actor, world, next, scope.rules)
         if (problem != null) {
             fail(actor, next, problem, scope)
             return
@@ -88,11 +90,12 @@ internal object ActionSystem {
 
     /**
      * How many ticks [action] takes for [actor]: the base duration for its type (the actor's own if
-     * they have one, otherwise the scenario's) plus the actor's speed penalty.
+     * they have one, otherwise the scenario's) plus the actor's speed penalty, for actions it slows.
      */
     private fun duration(actor: Actor, action: Action, scope: TickScope): Int {
         val base = actor.actionSeconds[action.type] ?: scope.rules.baseSeconds(action.type)
         // TODO add the wound penalty (mechanics.md §2: +1.2 s at health 3, +3.6 s at health 2) once actors have health.
-        return Time.ticks(base + actor.speedPenaltySeconds)
+        val penalty = if (action.type in scope.rules.unslowedActions) 0.0 else actor.speedPenaltySeconds
+        return Time.ticks(base + penalty)
     }
 }

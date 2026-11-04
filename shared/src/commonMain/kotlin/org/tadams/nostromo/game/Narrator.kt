@@ -40,6 +40,8 @@ class Narrator(private val text: EventText) {
     private fun tell(event: GameEvent): List<String> = when (event) {
         is GameEvent.ActionStarted -> when (val action = event.action) {
             is Action.Attack -> open(event.actor, action.target, wounded = false)
+            // Instant: the ItemTaken / ItemDropped / ItemSwapped a tick later says it all.
+            is Action.Get, is Action.Drop, is Action.Swap -> emptyList()
             else -> listOf(text.describe(event))
         }
         is GameEvent.AttackHit -> hit(event)

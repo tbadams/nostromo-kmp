@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.tadams.nostromo.core.action.ActionType
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 
 /**
@@ -19,7 +20,35 @@ data class Scenario(
     val rooms: List<RoomDef>,
     val links: List<LinkDef>,
     val actors: List<ActorDef>,
+    /** The kinds of item there are; [items] refer to them by id. */
+    val itemTypes: List<ItemTypeDef> = emptyList(),
+    /** Every item on the ship, and where it starts. */
+    val items: List<ItemDef> = emptyList(),
     val rules: Rules = Rules(),
+)
+
+/**
+ * A kind of item, e.g. "laser". Only an item *in use* counts, as a weapon and for morale
+ * (docs/mechanics.md §4, §5, §7).
+ * TODO charges (laser 8, extinguisher 3, harpoon 1, tracker breaks) and special effects (room
+ *  damage, the harpoon killing the room, the net freezing, scaring the creature off): build step 4.
+ */
+@Serializable
+data class ItemTypeDef(
+    val id: String,
+    val name: String,
+    /** Health an attack with this in use takes off the target. 0 means it does nothing. */
+    val damage: Int = 0,
+    /** Added to the holder's base morale while it's in use. */
+    val morale: Int = 0,
+)
+
+/** One item, of [type] (an [ItemTypeDef.id]), lying in [room] at the start. */
+@Serializable
+data class ItemDef(
+    val id: ItemId,
+    val type: String,
+    val room: RoomId,
 )
 
 /** A location on the map. */
@@ -83,6 +112,8 @@ data class ActorDef(
      * ([ActorKind.defaultCapabilities]).
      */
     val capabilities: Set<ActionType>? = null,
+    /** Starting base morale (docs/mechanics.md §5). Only crew have morale. Original: 3 or 4. */
+    val morale: Int = 3,
 )
 
 /** Broad type of actor. Only [CREW] take orders. */
@@ -91,7 +122,9 @@ enum class ActorKind(
     /** What this kind of actor can do unless the scenario says otherwise. */
     val defaultCapabilities: Set<ActionType>,
 ) {
-    @SerialName("crew") CREW(setOf(ActionType.MOVE, ActionType.ATTACK)),
+    @SerialName("crew") CREW(
+        setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.GET, ActionType.DROP, ActionType.SWAP),
+    ),
     @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.PROWL)),
     @SerialName("animal") ANIMAL(setOf(ActionType.MOVE)),
     // TODO Android?!?

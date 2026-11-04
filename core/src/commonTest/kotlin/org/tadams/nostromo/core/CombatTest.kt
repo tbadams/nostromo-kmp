@@ -6,6 +6,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.tadams.nostromo.core.action.Action.Attack
+import org.tadams.nostromo.core.action.Action.Get
 import org.tadams.nostromo.core.action.Action.Move
 import org.tadams.nostromo.core.action.ActionType
 import org.tadams.nostromo.core.action.Command.Order
@@ -21,10 +22,13 @@ class CombatTest {
 
     private val creature = ActorId("creature")
 
-    /** The corridor with a creature in room C. Attacks take 1 s (10 ticks), moves 5 s. */
+    /**
+     * The corridor with a creature in room C and weapons lying in A. Attacks take 1 s (10 ticks),
+     * moves 5 s. Crew need to pick up a weapon ([Get], one tick) to do any damage.
+     */
     private fun withCreature(creatureHealth: Int = 3, creatureBrain: String? = null) = corridor(
         Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0, ActionType.ATTACK to 1.0)),
-    ).let { it.copy(actors = it.actors + ActorDef(creature, "Creature", ActorKind.CREATURE, C, creatureBrain, creatureHealth)) }
+    ).withWeapons().let { it.copy(actors = it.actors + ActorDef(creature, "Creature", ActorKind.CREATURE, C, creatureBrain, creatureHealth)) }
 
     /** Always rolls 0: the first victim, the first exit. */
     private object FirstChoice : Dice {
@@ -34,13 +38,14 @@ class CombatTest {
     @Test
     fun attackLandsAfterItsDurationAndCostsHealth() {
         val sim = Simulation(withCreature(), FirstChoice)
-        sim.submit(Order(ROBY, Attack(HUNTER)))
+        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Attack(HUNTER)))) // the get takes tick 0, the attack ticks 1-10
 
-        sim.runTicks(9)
+        sim.runTicks(10)
         assertEquals(4, sim.state().actor(HUNTER).health)
 
         val hit = sim.tick().filterIsInstance<GameEvent.AttackHit>().single()
         assertEquals(ROBY, hit.attacker)
+        assertEquals(1, hit.damage)
         assertEquals(3, hit.healthLeft)
         assertEquals(3, sim.state().actor(HUNTER).health)
     }
@@ -65,8 +70,8 @@ class CombatTest {
         }
         val sim = Simulation(scenario, FirstChoice)
         sim.submit(Order(HUNTER, Move(B)))
-        sim.submit(Order(ROBY, Attack(HUNTER)))
-        val events = sim.runTicks(10)
+        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Attack(HUNTER))))
+        val events = sim.runTicks(11)
 
         assertEquals(HUNTER, events.filterIsInstance<GameEvent.ActorDown>().single().actor)
         val hunter = sim.state().actor(HUNTER)
@@ -83,7 +88,7 @@ class CombatTest {
             s.copy(actors = s.actors.map { if (it.id == HUNTER) it.copy(health = 1) else it })
         }
         val sim = Simulation(scenario, FirstChoice)
-        sim.submit(Order(ROBY, listOf(Attack(HUNTER), Attack(HUNTER))))
+        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Attack(HUNTER), Attack(HUNTER))))
         val failed = sim.runTicks(20).filterIsInstance<GameEvent.ActionFailed>().single()
         assertEquals(FailReason.TARGET_DOWN, failed.reason)
         assertTrue(sim.availableActions(ROBY).none { it.action is Attack }, "no one left to attack")
@@ -92,7 +97,7 @@ class CombatTest {
     @Test
     fun killingTheCreatureWinsTheGame() {
         val sim = Simulation(withCreature(creatureHealth = 2), FirstChoice)
-        sim.submit(Order(ROBY, listOf(Move(B), Move(C), Attack(creature), Attack(creature))))
+        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Move(B), Move(C), Attack(creature), Attack(creature))))
         val events = sim.runTicks(200)
 
         val result = assertNotNull(sim.result)
@@ -103,6 +108,41 @@ class CombatTest {
         assertEquals(2 * 4 + 2 * 4, result.rating.total, "2 × health of each survivor")
         assertEquals(result, events.filterIsInstance<GameEvent.GameOver>().single().result)
         assertTrue(sim.tick().isEmpty(), "nothing happens after the game ends")
+    }
+
+    @Test
+    fun theItemInUseSetsTheDamage() {
+        val sim = Simulation(withCreature(), FirstChoice)
+        sim.submit(Order(ROBY, listOf(Get(LASER_1), Attack(HUNTER))))
+        val hit = sim.runTicks(11).filterIsInstance<GameEvent.AttackHit>().single()
+        assertEquals(2, hit.damage)
+        assertEquals(2, sim.state().actor(HUNTER).health)
+    }
+
+    @Test
+    fun crewWithNothingInUseDoNoDamage() {
+        val sim = Simulation(withCreature(), FirstChoice)
+        sim.submit(Order(ROBY, Attack(HUNTER)))
+        val hit = sim.runTicks(10).filterIsInstance<GameEvent.AttackHit>().single()
+        assertEquals(0, hit.damage)
+        assertEquals(4, sim.state().actor(HUNTER).health)
+        assertEquals("Roby hits Hunter, to no effect", sim.text.describe(hit))
+    }
+
+    @Test
+    fun goingDownDropsWhatTheyHold() {
+        val scenario = withCreature().let { s ->
+            s.copy(actors = s.actors.map { if (it.id == HUNTER) it.copy(health = 1) else it })
+        }
+        val sim = Simulation(scenario, FirstChoice)
+        sim.submit(Order(HUNTER, Get(LASER_1)))
+        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Attack(HUNTER))))
+        sim.runTicks(11)
+
+        val hunter = sim.state().actor(HUNTER)
+        assertTrue(hunter.isDown)
+        assertNull(hunter.inUse)
+        assertEquals(A, sim.state().item(LASER_1).room)
     }
 
     @Test

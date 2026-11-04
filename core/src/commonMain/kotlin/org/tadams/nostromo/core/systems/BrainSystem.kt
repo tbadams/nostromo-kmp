@@ -1,5 +1,6 @@
 package org.tadams.nostromo.core.systems
 
+import org.tadams.nostromo.core.TickScope
 import org.tadams.nostromo.core.action.Options
 import org.tadams.nostromo.core.ai.Brains
 import org.tadams.nostromo.core.model.World

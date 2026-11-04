@@ -1,5 +1,6 @@
 package org.tadams.nostromo.core.systems
 
+import org.tadams.nostromo.core.TickScope
 import org.tadams.nostromo.core.Ending
 import org.tadams.nostromo.core.GameResult
 import org.tadams.nostromo.core.Rating

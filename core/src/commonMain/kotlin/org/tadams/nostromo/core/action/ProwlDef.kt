@@ -6,7 +6,7 @@ import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.scenario.RoomKind
-import org.tadams.nostromo.core.systems.TickScope
+import org.tadams.nostromo.core.TickScope
 
 /**
  * Lingering in place. In the original the creature's random move could land on its own room (exit

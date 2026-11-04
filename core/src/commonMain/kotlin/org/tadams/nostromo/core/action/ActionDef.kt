@@ -3,7 +3,7 @@ package org.tadams.nostromo.core.action
 import org.tadams.nostromo.core.event.FailReason
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
-import org.tadams.nostromo.core.systems.TickScope
+import org.tadams.nostromo.core.TickScope
 
 /**
  * Everything about one type of action: which specific actions an actor could take ([candidates]),
@@ -33,7 +33,7 @@ internal interface ActionDef<A : Action> {
  */
 internal object ActionDefs {
     /** In menu order: the most urgent options first. */
-    val all: List<ActionDef<*>> = listOf(AttackDef, MoveDef, ProwlDef)
+    val all: List<ActionDef<*>> = listOf(AttackDef, MoveDef, SwapDef, GetDef, DropDef, ProwlDef)
 
     private val byType: Map<ActionType, ActionDef<*>> = all.associateBy { it.type }
 

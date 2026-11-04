@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.action
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 
 /** Something an actor does over time. It only changes the world when it completes. */
@@ -27,6 +28,21 @@ sealed interface Action {
     data object Prowl : Action {
         override val type get() = ActionType.PROWL
     }
+
+    /** Pick up [item] from the floor: into use if nothing is, otherwise as the carried spare. */
+    data class Get(val item: ItemId) : Action {
+        override val type get() = ActionType.GET
+    }
+
+    /** Put down [item], in use or carried, in the current location. */
+    data class Drop(val item: ItemId) : Action {
+        override val type get() = ActionType.DROP
+    }
+
+    /** Put the carried [item] into use, swapping it with whatever was in use. */
+    data class Swap(val item: ItemId) : Action {
+        override val type get() = ActionType.SWAP
+    }
 }
 
 /**
@@ -43,6 +59,15 @@ enum class ActionType(val defaultSeconds: Double) {
 
     /** Original: the creature's 80-tick move, landing on its own room. */
     @SerialName("prowl") PROWL(5.9),
+
+    /** Instant in the original, so one tick (and no speed penalty; see Rules.unslowedActions). */
+    @SerialName("get") GET(0.1),
+
+    /** Instant in the original. */
+    @SerialName("drop") DROP(0.1),
+
+    /** Instant in the original. */
+    @SerialName("swap") SWAP(0.1),
 }
 
 /** Player input. Applied at the start of the next tick. */

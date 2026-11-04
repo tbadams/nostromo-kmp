@@ -1,4 +1,4 @@
-package org.tadams.nostromo.core.systems
+package org.tadams.nostromo.core
 
 import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.rng.Dice

@@ -1,5 +1,6 @@
 package org.tadams.nostromo.core.systems
 
+import org.tadams.nostromo.core.TickScope
 import org.tadams.nostromo.core.action.Command
 import org.tadams.nostromo.core.model.World
 

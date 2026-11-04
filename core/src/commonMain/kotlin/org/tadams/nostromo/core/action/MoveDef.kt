@@ -5,7 +5,7 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
-import org.tadams.nostromo.core.systems.TickScope
+import org.tadams.nostromo.core.TickScope
 
 /** Moving to an adjacent location: through a door, up a ladder, or into and along ducts. */
 internal object MoveDef : ActionDef<Action.Move> {

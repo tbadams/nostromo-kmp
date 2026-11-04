@@ -2,10 +2,13 @@ package org.tadams.nostromo.core
 
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.RoomKind
+import org.tadams.nostromo.core.scenario.Rules
+import org.tadams.nostromo.core.systems.MoraleSystem
 
 /** Immutable snapshot of the game for the UI. */
 data class GameState(
@@ -17,6 +20,8 @@ data class GameState(
     val rooms: List<RoomState>,
     /** In scenario order. */
     val actors: List<ActorState>,
+    /** In scenario order, held ones included. */
+    val items: List<ItemState> = emptyList(),
 ) {
     /**
      * Lookup actor state by ID.
@@ -26,11 +31,17 @@ data class GameState(
     /** Lookup room state by ID. */
     fun room(id: RoomId): RoomState = rooms.first { it.id == id }
 
+    /** Lookup item state by ID. */
+    fun item(id: ItemId): ItemState = items.first { it.id == id }
+
+    /** Items lying in [room]. */
+    fun itemsIn(room: RoomId): List<ItemState> = items.filter { it.room == room }
+
     companion object {
         /**
          * Returns an immutable snapshot of the active game World, specifying the current time tick.
          */
-        internal fun of(world: World, tick: Long, result: GameResult?) = GameState(
+        internal fun of(world: World, rules: Rules, tick: Long, result: GameResult?) = GameState(
             tick = tick,
             result = result,
             rooms = world.rooms.values.map { room ->
@@ -45,8 +56,12 @@ data class GameState(
                     health = actor.health,
                     activity = actor.current?.let { ActivityState(it.action, it.elapsedTicks, it.totalTicks) },
                     queued = actor.queue.toList(),
+                    inUse = actor.inUse,
+                    carried = actor.carried,
+                    morale = if (actor.isCrew) MoraleSystem.effective(actor, world, rules) else null,
                 )
             },
+            items = world.items.values.map { ItemState(it.id, it.type.name, it.room) },
         )
     }
 }
@@ -74,9 +89,18 @@ data class ActorState(
     val activity: ActivityState?,
     /** Actions waiting after the current one, e.g. the rest of a click-to-move path. */
     val queued: List<Action>,
+    /** The item in use, if any. */
+    val inUse: ItemId? = null,
+    /** The carried spare, if any. */
+    val carried: ItemId? = null,
+    /** Effective morale (docs/mechanics.md §5); null for non-crew. */
+    val morale: Int? = null,
 ) {
     val isDown get() = health <= 0
 }
+
+/** An item as the UI sees it. [room] is where it lies, or null if someone holds it. */
+data class ItemState(val id: ItemId, val name: String, val room: RoomId?)
 
 /** An action in progress: [elapsedTicks] of [totalTicks] done. */
 data class ActivityState(val action: Action, val elapsedTicks: Int, val totalTicks: Int) {

@@ -51,6 +51,7 @@ import org.tadams.nostromo.core.GameResult
 import org.tadams.nostromo.core.RoomState
 import org.tadams.nostromo.core.Time
 import org.tadams.nostromo.core.action.Action
+import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.RoomKind
@@ -135,9 +136,9 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
 }
 
 /**
- * Status of the selected crew member's surroundings. Today just where they are.
- * TODO add morale (step 3) and the room's damage (step 5), as the original's bottom line and
- *  nostromo-js did.
+ * Status of the selected crew member and their surroundings: where they are, health, morale, what
+ * they hold and what's lying here.
+ * TODO add the room's damage (step 5), as the original's bottom line and nostromo-js did.
  */
 @Composable
 private fun BottomBar(ui: GameUiState, modifier: Modifier) {
@@ -150,6 +151,14 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
             MonoText(actor.name, Amber, bold = true)
             MonoText("in ${ui.game.room(actor.room).name}", Green)
             MonoText(if (actor.isDown) "DOWN" else "health ${actor.health}", Green)
+            actor.morale?.let { MonoText("morale ${EventText.morale(it)} ($it)", Green) }
+            val held = listOfNotNull(
+                actor.inUse?.let { "${ui.game.item(it).name} (in use)" },
+                actor.carried?.let { ui.game.item(it).name },
+            )
+            MonoText("holding ${held.joinToString().ifEmpty { "nothing" }}", Green)
+            val here = ui.game.itemsIn(actor.room).map { it.name }
+            if (here.isNotEmpty()) MonoText("here: ${here.joinToString()}", Green)
         }
     }
 }
@@ -240,6 +249,9 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
             item { MonoText(deck.uppercase(), Amber, bold = true) }
             items(rooms.filter(::shown)) { room ->
                 val names = visibleIn(room).joinToString { if (it.isDown) "${it.name} (down)" else it.name }
+                // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
+                //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
+                //  visible because someone is there looks the same as one only debug reveals.
                 val colour = if (room.id == selectedRoom) Amber else if (room.kind == RoomKind.DUCT) DimGreen else Green
                 MonoText("  ${room.name.padEnd(22)} $names", colour)
             }
@@ -321,4 +333,7 @@ private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Move -> "moving to ${game.room(action.to).name}"
     is Action.Attack -> "attacking ${game.actor(action.target).name}"
     Action.Prowl -> "prowling"
+    is Action.Get -> "picking up the ${game.item(action.item).name}"
+    is Action.Drop -> "dropping the ${game.item(action.item).name}"
+    is Action.Swap -> "swapping to the ${game.item(action.item).name}"
 }

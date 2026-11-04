@@ -53,11 +53,22 @@ object ScenarioValidator {
             if (actor.room !in known) add("Actor '${actor.id}' starts in unknown room '${actor.room}'")
             if (actor.speedPenaltySeconds < 0) add("Actor '${actor.id}' has negative speedPenaltySeconds")
             if (actor.health <= 0) add("Actor '${actor.id}' health must be positive")
+            if (actor.morale < 0) add("Actor '${actor.id}' morale must not be negative")
             val brain = actor.brain
             if (brain != null && brain !in Brains.ids) add("Actor '${actor.id}' has unknown brain '$brain'")
             for ((type, seconds) in actor.actionSeconds) {
                 if (seconds <= 0) add("Actor '${actor.id}' actionSeconds for $type must be positive")
             }
+        }
+        duplicates(scenario.itemTypes.map { it.id }).forEach { add("Duplicate item type '$it'") }
+        duplicates(scenario.items.map { it.id }).forEach { add("Duplicate item id '$it'") }
+        for (type in scenario.itemTypes) {
+            if (type.damage < 0) add("Item type '${type.id}' damage must not be negative")
+        }
+        val types = scenario.itemTypes.map { it.id }.toSet()
+        for (item in scenario.items) {
+            if (item.type !in types) add("Item '${item.id}' has unknown type '${item.type}'")
+            if (item.room !in known) add("Item '${item.id}' starts in unknown room '${item.room}'")
         }
         if (scenario.rules.attackDamage <= 0) add("rules.attackDamage must be positive")
         if (scenario.rules.prowlDamagePercent < 0) add("rules.prowlDamagePercent must not be negative")
