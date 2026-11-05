@@ -32,8 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import org.tadams.nostromo.core.action.Action
+import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.RoomState
 import org.tadams.nostromo.core.model.RoomId
+import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.ui.Amber
 import org.tadams.nostromo.ui.Background
@@ -43,11 +45,14 @@ import org.tadams.nostromo.ui.Green
 /**
  * The ship as a schematic: boxes for rooms, lines for doors and ladders, a small marker beside each
  * room for its duct segment, laid out by [layoutMap] (docs/proto-map.md). Shows the same things as
- * the text list ([MapView]), in the same colours. Tapping one of those (a light green room or duct) orders the move,
- * the same as its button in the action bar.
+ * the text list ([MapView]), in the same colours.
+ *
+ * Tapping where the selected crew member can move (a light green room or duct) orders the move, the
+ * same as its button in the action bar. Tapping any other room or duct with crew in it, bar the
+ * selected crew member's own, selects the first of them.
  */
 @Composable
-internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier: Modifier) {
+internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, onSelect: (ActorId) -> Unit, modifier: Modifier) {
     val layout = remember(ui.scenario) { layoutMap(ui.scenario) }
     val measurer = rememberTextMeasurer()
     val view = MapView(ui)
@@ -55,6 +60,7 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
     // Read the latest state from inside the long-lived tap handler.
     val currentUi by rememberUpdatedState(ui)
     val currentOnOrder by rememberUpdatedState(onOrder)
+    val currentOnSelect by rememberUpdatedState(onSelect)
 
     Canvas(
         modifier.border(1.dp, DimGreen).padding(8.dp).pointerInput(layout) {
@@ -63,11 +69,25 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
                 val minTarget = 24.dp.toPx()
                 // Only the light green places, and only as moves on offer right now, so a tap can't order
                 // anything the action bar wouldn't. (Through an open grille is offered but not light green.)
-                val destinations = MapView(currentUi).destinations
+                val tapView = MapView(currentUi)
                 val move = currentUi.actions.map { it.action }.filterIsInstance<Action.Move>()
-                    .filter { it.to in destinations }
+                    .filter { it.to in tapView.destinations }
                     .firstOrNull { geometry.bounds(it.to, minTarget)?.contains(tap) == true }
-                if (move != null) currentOnOrder(move)
+                if (move != null) {
+                    currentOnOrder(move)
+                    return@detectTapGestures
+                }
+                // Anywhere else shown on the map, bar the selected crew member's own room: select the
+                // first crew member there who answers, in crew tab order. Ducts first, as their tap area
+                // reaches over their room box's corner.
+                val tapped = (layout.ducts.keys + layout.rooms.keys)
+                    .mapNotNull { id -> currentUi.game.rooms.firstOrNull { it.id == id } }
+                    .filter { tapView.shown(it) && it.id != tapView.selectedRoom }
+                    .firstOrNull { geometry.bounds(it.id, minTarget)?.contains(tap) == true }
+                    ?: return@detectTapGestures
+                tapView.visibleIn(tapped)
+                    .firstOrNull { it.kind == ActorKind.CREW && condition(it, currentUi) == Condition.UP }
+                    ?.let { currentOnSelect(it.id) }
             }
         },
     ) {
