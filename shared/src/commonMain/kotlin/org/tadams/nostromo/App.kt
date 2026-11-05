@@ -20,9 +20,14 @@ import org.tadams.nostromo.core.scenario.Scenario
 import org.tadams.nostromo.core.scenario.ScenarioLoader
 import org.tadams.nostromo.game.GameScreen
 import org.tadams.nostromo.game.GameViewModel
+import org.tadams.nostromo.menu.InstructionsScreen
+import org.tadams.nostromo.menu.MainMenu
 import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.Green
 import kotlin.random.Random
+
+/** Which screen is showing. The game starts at the main menu. */
+private enum class Screen { MENU, INSTRUCTIONS, GAME }
 
 @Composable
 fun App() {
@@ -34,13 +39,18 @@ fun App() {
                 .onSuccess { scenario = it }
                 .onFailure { error = it.message ?: it.toString() }
         }
+        var screen by remember { mutableStateOf(Screen.MENU) }
+        // A new seed is a new game: keying the view model on it gives a fresh one.
+        var seed by remember { mutableStateOf(Random.nextLong()) }
         val loaded = scenario
         when {
-            loaded != null -> {
-                // A new seed is a new game: keying the view model on it gives a fresh one.
-                var seed by remember { mutableStateOf(Random.nextLong()) }
+            screen == Screen.MENU -> MainMenu(
+                onStart = { seed = Random.nextLong(); screen = Screen.GAME },
+                onInstructions = { screen = Screen.INSTRUCTIONS },
+            )
+            screen == Screen.INSTRUCTIONS -> InstructionsScreen(onBack = { screen = Screen.MENU })
+            loaded != null ->
                 GameScreen(viewModel(key = "game-$seed") { GameViewModel(loaded, seed) }, onRestart = { seed = Random.nextLong() })
-            }
             else -> Box(Modifier.fillMaxSize().background(Background), contentAlignment = Alignment.Center) {
                 Text(error ?: "Loading…", color = Green)
             }
