@@ -56,8 +56,8 @@ class Simulation(scenario: Scenario, seed: Long) {
 ### Actions and commands
 
 - `Command` is input from the player: `Order(actor, action)`, `Cancel(actor)`, `Select(actor)`, and so on.
-- `Action` is something an actor is doing, with a duration: `Move`, `UseGrille`, `RemoveGrille`, `Attack`, `PickUp`, `Hypersleep`, and so on. Each actor has a **current action** (with progress, which the UI shows) and a **queue**. Click-to-move pushes several `Move`s found by a breadth-first search over the room graph.
-- `availableActions(actor)` returns a flat list of options, e.g. "Get Laser Pistol" or "Attack Ash". The UI renders it directly, so there are no nested menus.
+- `Action` is something an actor is doing, with a duration: `Move`, `RemoveGrille`, `Attack`, `Get`, `Drop`, `Swap`, later `Hypersleep`, and so on. Going through an open grille is a `Move`. Each actor has a **current action** (with progress, which the UI shows) and a **queue**. Click-to-move pushes several `Move`s found by a breadth-first search over the room graph.
+- `availableActions(actor)` returns a flat list of options, e.g. "Get Laser Pistol" or "Attack Creature". The UI renders it directly, so there are no nested menus.
 - **One definition per action type** (`ActionDef`: `candidates`, `check`, `complete`) holds that action's rules. `Options.forActor` combines them with the actor's **capabilities** (which action types it can ever take; defaults per actor kind, overridable in the scenario) into the list of what it can do right now. The action bar and brains both use that list, and the scheduler runs the same `check` when an action starts and again when it lands, so what's offered, allowed and applied can't drift apart.
 - **Busy actors: a new order replaces the current one.** If you order a busy character to do something else, their current action and queue are cancelled and the new order starts. For example, "Get out of there!" interrupts a grille removal.
   - So the scheduler must support **cancelling** actions:
@@ -187,6 +187,7 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Also done: panic at morale 0 (drop everything and run; in a duct, rip out the grille and climb out); −1/+1 base morale entering/leaving ducts; finding bodies (−1 to all crew, and the UI shows crew as down only once found); room capacity (3 per room, 1 per duct, bodies count; a move into a full place waits and retries). All tuning numbers are in `Rules`.
    - Differs from the original, on purpose for now: the obedience gate runs when an action starts, not when it lands; bodies are found as soon as someone shares their location, not on the next arrival; a panicking crew member always runs if there's a way out.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
+   - Also, carried over from step 3 as code TODOs: item charges and special effects; the tracker's +1 morale; +1 morale for driving the creature off; the grille sound heard ship-wide; the creature's faster grille passage (50 vs 80 ticks) and its 6/16 preference for an open grille; the android's obedience (never attacks the creature, skips the morale check) and crew being allowed to attack it once revealed; the wound penalty on action times.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
    - Narrator idea: hide the "starts moving to …" and "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew.

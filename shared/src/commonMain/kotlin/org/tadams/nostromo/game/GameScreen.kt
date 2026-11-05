@@ -179,7 +179,8 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
             val grille = def.actionSeconds[ActionType.REMOVE_GRILLE] ?: rules.baseSeconds(ActionType.REMOVE_GRILLE)
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 MonoText("speed penalty +${def.speedPenaltySeconds}s", DimGreen)
-                MonoText("grille removal ${grille}s (+${def.speedPenaltySeconds}s)", DimGreen)
+                // Total wait: own base time plus the speed penalty, rounded to the tick as the simulation does.
+                MonoText("grille removal ${Time.seconds(Time.ticks(grille + def.speedPenaltySeconds))}", DimGreen)
             }
         }
     }

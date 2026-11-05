@@ -213,6 +213,8 @@ score = Σ over attackers in good health (health > 2):
 - The alien flees with chance `score/16`, and never on a roll of 15. It jumps straight to a random neighbouring room.
 - Each attacker then gains +1 base morale.
 - Examples: one Confident attacker against a fresh alien: 1/16. Three Confident attackers against an alien with 8 damage: 9/16.
+- **Unarmed attacks do nothing** (`92D0`): with no item in use the attack exits before any damage or message.
+- **Bug in the original (from reading the code, not tested):** `L_7C4F` doesn't clear the shared active-item slot `7A10` when the attacker has nothing in use, so the slot keeps whatever the menu last put there, which is the item of the crew member selected on screen. An unarmed attacker can then effectively fire the selected crew member's weapon (e.g. a laser: +2 damage, using that laser's charges). We don't copy this.
 - **Bug in the original:** the code at `94AC` was meant to give an extra +1 for holding a Tracker. It tests "item == 6" and then "item == 7", which can never both be true, so the bonus never applies.
 
 **Airlock kill** (`96F5`):
