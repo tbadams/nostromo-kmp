@@ -51,7 +51,7 @@ SHIP_DECKS = {"upper", "middle", "lower"}
 # Cat-catching difficulty is the original's per-character value (docs/mechanics.md §2).
 CREW = [
     # name,       original, start room,      health, speed penalty s, base morale, grille removal s, catch
-    ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4, 7.4, 14),
+    ("Martin",    "Dallas",  "command-centre", 5, 0.5, 4, 7.4, 14),
     ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9, 14),
     ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3, 13),
     ("Hill",      "Ash",     "mess",           4, 0.5, 4, 7.4, 13),

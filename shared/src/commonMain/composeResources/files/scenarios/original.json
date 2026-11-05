@@ -917,8 +917,8 @@
   ],
   "actors": [
     {
-      "id": "standard",
-      "name": "Standard",
+      "id": "martin",
+      "name": "Martin",
       "kind": "crew",
       "room": "command-centre",
       "health": 5,

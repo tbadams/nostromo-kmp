@@ -236,7 +236,7 @@ Worth doing, but not needed for the hack.
 - **The creature never hunts,** as in the original. It attacks crew in its room, and otherwise wanders or prowls (lingers, damaging the room), weighted so dead ends make it linger.
 - **Brains only choose from `Options`;** they never invent actions.
 - **Crew stand-ins for the original's seven** (stats in mechanics §4; table in `tools/make_scenario.py`):
-  - Standard = Dallas, Broussard = Kane, Roby = Ripley, Hill = Ash (inferred, unconfirmed), Melkonis = Lambert, Hunter = Parker, Faust = Brett.
+  - Martin = Dallas, Broussard = Kane, Roby = Ripley, Hill = Ash (inferred, unconfirmed), Melkonis = Lambert, Hunter = Parker, Faust = Brett.
   - Health is the original's minus 1, because its crew collapse below 2.
 - **Morale is worked out from the world, not stored.** Base morale is the actor's own plus the in-use item's bonus, and effective morale adds company and bodies (mechanics §5). The original updated both on item changes and arrivals; computing them live gives the same numbers without having to undo bonuses on every way an item can leave.
 - **No friendly fire by default.** As in the original, crew can attack only the creature (later also the revealed android). `Rules.friendlyFire` turns crew-on-crew attacks back on; the `:core` test fixtures switch it on because it's the simplest way to cause damage.
