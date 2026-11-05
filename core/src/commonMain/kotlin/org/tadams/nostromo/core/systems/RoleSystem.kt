@@ -49,7 +49,7 @@ internal object RoleSystem {
      * then on its brain ("android") attacks crew it finds and otherwise wanders.
      */
     fun run(world: World, scope: TickScope) {
-        val android = world.actors.values.firstOrNull { it.isAndroid && !it.revealed && !it.isDown } ?: return
+        val android = world.actors.values.firstOrNull { it.isAndroid && !it.revealed && !it.outOfPlay } ?: return
         val hurt = world.actors.values.any {
             it.kind == ActorKind.CREATURE && it.maxHealth - it.health >= scope.rules.androidRevealDamage
         }

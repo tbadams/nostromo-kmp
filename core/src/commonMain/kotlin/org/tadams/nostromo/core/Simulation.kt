@@ -19,6 +19,8 @@ import org.tadams.nostromo.core.systems.BrainSystem
 import org.tadams.nostromo.core.systems.CommandSystem
 import org.tadams.nostromo.core.systems.DetectionSystem
 import org.tadams.nostromo.core.systems.EndSystem
+import org.tadams.nostromo.core.systems.HazardSystem
+import org.tadams.nostromo.core.systems.ShipSystem
 import org.tadams.nostromo.core.systems.MoraleSystem
 import org.tadams.nostromo.core.systems.RoleSystem
 
@@ -83,6 +85,8 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
         RoleSystem.run(world, scope)
         BrainSystem.run(world, scope)
         MoraleSystem.run(world, scope)
+        HazardSystem.run(world, scope)
+        ShipSystem.run(world)
         DetectionSystem.run(world, scope, readings)
         result = EndSystem.run(world, scope)
         tick++

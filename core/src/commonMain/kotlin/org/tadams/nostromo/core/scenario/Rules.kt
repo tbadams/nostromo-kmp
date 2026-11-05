@@ -15,7 +15,11 @@ data class Rules(
      * Action types an actor's speed and wound penalties aren't added to. Original: picking up,
      * dropping and swapping items, and grabbing the cat, were instant for everyone.
      */
-    val unslowedActions: Set<ActionType> = setOf(ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH),
+    val unslowedActions: Set<ActionType> = setOf(
+        ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH,
+        ActionType.ARM_DESTRUCT, ActionType.DISARM_DESTRUCT, ActionType.BLOW_AIRLOCK, ActionType.SEAL_AIRLOCK,
+        ActionType.HYPERSLEEP, ActionType.LAUNCH, ActionType.FIGHT_FIRE,
+    ),
     /**
      * Extra seconds on a crew member's actions when they're wounded, by health left. Original: +16
      * ticks at its health 3 and +48 at 2, which is our 2 and 1 (our health is the original's minus 1).
@@ -80,7 +84,51 @@ data class Rules(
     val detectorClearMorale: Int = 1,
     /** Base morale added by an item in use with a caught animal in it. Original: 1 ("Cat in Box"). */
     val caughtAnimalMorale: Int = 1,
+
+    // ---- The ship (docs/mechanics.md §3, §10)
+
+    /**
+     * How long the self-destruct runs once armed, in real seconds. Override stops it, and arming again
+     * starts from the top. Original: shown as 5:00 but about 7.4 real minutes; ours is 7:00.
+     */
+    val destructSeconds: Double = 420.0,
+    /** Oxygen at the start, in the original's units. The thousands digit scores TIM. Original: 7500. */
+    val oxygenStart: Int = 7500,
+    /**
+     * Oxygen each breathing crew member (up, loyal, not in hypersleep) uses per second. Differs from
+     * the original, whose rate was fastest with exactly one crew member missing (a bug). 1.13 gives a
+     * crew of six about the original long game's 18.5 minutes, and longer as crew are lost.
+     */
+    val oxygenPerCrewSecond: Double = 1.13,
+    /** Oxygen level at which the "critical" warning sounds. Original: 500. */
+    val oxygenCriticalAt: Int = 500,
+    /** Room damage at which flammable rooms catch fire and key systems fail. Original: 30. */
+    val fireAtPercent: Int = 30,
+    /** Room damage at which the "structural damage" warning sounds. Original: 70. At 100 the ship explodes. */
+    val structuralAtPercent: Int = 70,
+    /** Damage a burning room takes every [fireIntervalSeconds]. Original: 5% every 100 ticks. */
+    val fireDamagePercent: Int = 5,
+    val fireIntervalSeconds: Double = 7.4,
+    /**
+     * Uses of an extinguisher needed to put a fire out: 1 below 60% damage, 2 below 80%, 3 above.
+     * The count resets once it's out (the original never reset it, a bug).
+     */
+    val fireFightsNeeded: List<FireFights> = listOf(FireFights(60, 1), FireFights(80, 2), FireFights(101, 3)),
+    /** Rooms below this damage score 1 each for DAM in the Competence Rating. Original: 20. */
+    val undamagedBelowPercent: Int = 20,
+    /** A creature blown out of an airlock with at least this much damage always dies. Original: 3. */
+    val airlockKillDamage: Int = 3,
+    /** Otherwise, its chance in 16 of surviving and coming back in at the intruder entry. Original: 2. */
+    val airlockSurvivalOdds: Int = 2,
 ) {
+    /** Extinguisher uses needed for a fire in a room at [damagePercent]. */
+    fun fireFightsFor(damagePercent: Int): Int =
+        fireFightsNeeded.firstOrNull { damagePercent < it.belowPercent }?.uses ?: fireFightsNeeded.lastOrNull()?.uses ?: 1
+
     /** Base duration of [type], before any per-actor adjustment. */
     fun baseSeconds(type: ActionType): Double = actionSeconds[type] ?: type.defaultSeconds
 }
+
+/** A fire in a room below [belowPercent] damage needs [uses] extinguisher uses. */
+@Serializable
+data class FireFights(val belowPercent: Int, val uses: Int)

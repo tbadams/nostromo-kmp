@@ -27,7 +27,7 @@ internal object ProwlDef : ActionDef<Action.Prowl> {
     override fun complete(actor: Actor, world: World, action: Action.Prowl, scope: TickScope) {
         val room = world.room(actor.room)
         if (room.kind != RoomKind.ROOM || scope.rules.prowlDamagePercent == 0) return
-        room.damagePercent = (room.damagePercent + scope.rules.prowlDamagePercent).coerceAtMost(100)
+        room.damage(scope.rules.prowlDamagePercent)
         // Crew in the room notice; nobody else does.
         val seenBy = Visibility.Perceived(world.witnesses(listOf(room.id)))
         scope.emit(GameEvent.RoomDamaged(scope.tick, room.id, room.damagePercent, seenBy))

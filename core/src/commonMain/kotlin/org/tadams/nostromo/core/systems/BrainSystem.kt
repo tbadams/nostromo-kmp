@@ -14,7 +14,7 @@ internal object BrainSystem {
     fun run(world: World, scope: TickScope) {
         for (actor in world.actors.values) {
             val brainId = actor.brain ?: continue
-            if (actor.isDown || actor.current != null || actor.queue.isNotEmpty()) continue
+            if (actor.outOfPlay || actor.current != null || actor.queue.isNotEmpty()) continue
             if (actor.frozenUntil > scope.tick || actor.caughtIn != null) continue
             val options = Options.valid(actor, world, scope.rules)
             if (options.isEmpty()) continue

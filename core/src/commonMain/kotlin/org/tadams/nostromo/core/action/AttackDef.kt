@@ -9,6 +9,7 @@ import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.Grilles
 import org.tadams.nostromo.core.model.Item
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.rng.ODDS
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.ItemEffect
 import org.tadams.nostromo.core.scenario.LinkKind
@@ -61,7 +62,7 @@ internal object AttackDef : ActionDef<Action.Attack> {
         if (item != null && charges != null) item.charges = charges - 1
 
         if (item != null && item.type.roomDamagePercent > 0 && here.kind == RoomKind.ROOM) {
-            here.damagePercent = (here.damagePercent + item.type.roomDamagePercent).coerceAtMost(100)
+            here.damage(item.type.roomDamagePercent)
             scope.emit(GameEvent.RoomDamaged(scope.tick, here.id, here.damagePercent, seenBy))
         }
 
@@ -138,8 +139,8 @@ internal object AttackDef : ActionDef<Action.Attack> {
             (if (MoraleSystem.effective(it, world, rules) >= rules.fleeConfidentMorale) 1 else 0) + damageTaken / rules.fleeDamageDivisor
         }
         if (score <= 0) return
-        val roll = scope.roll(16, "${creature.name} flees (needs under $score)")
-        if (roll == 15 || roll >= score) return
+        val roll = scope.roll(ODDS, "${creature.name} flees (needs under $score)")
+        if (roll == ODDS - 1 || roll >= score) return
 
         // Any way out that's open, an open grille included.
         // Differs from the original: its random move never used the grille, only doors and ladders from

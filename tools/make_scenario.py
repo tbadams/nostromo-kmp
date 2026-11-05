@@ -67,6 +67,23 @@ ROLES = {"android": {"pick": "any"}, "host": {"pick": "any"}}
 # Every grille starts in place except this room's (docs/mechanics.md §3).
 OPEN_GRILLES = {"corridor-6"}
 
+# What's special about each room (docs/mechanics.md §3, §7, §10): the original's room menus and
+# damage effects.
+FEATURES = {
+    "command-centre": ["destructControls", "keySystem"],
+    "computer-room": ["keySystem"],
+    "life-support": ["keySystem"],
+    "shuttle-bay": ["keySystem", "intruderEntry"],
+    "corridor-6": ["airlockControls"],
+    "airlock-1": ["airlock"],
+    "airlock-2": ["airlock"],
+    "cryo-vault": ["hypersleep"],
+    "shuttle": ["launch"],
+    "engine-1": ["flammable"],
+    "engine-2": ["flammable"],
+    "engine-3": ["flammable"],
+}
+
 # Item types, in the original's item-table order (docs/mechanics.md §7, reference/notes/10_data_map.md §4):
 # id, name, how many, damage to the creature, morale bonus while in use, then extra fields: charges,
 # special effects, detecting and catching.
@@ -74,7 +91,7 @@ ITEM_TYPES = [
     ("prod",         "Electric Prod",    3, 1, 1, {}),
     ("incinerator",  "Incinerator",      3, 1, 2, {}),
     ("tracker",      "Tracker",          2, 1, 0, {"charges": 1, "breaksWhenSpent": True, "detects": True}),
-    ("extinguisher", "Fire Extinguisher", 4, 0, 1, {"charges": 3, "scares": True}),
+    ("extinguisher", "Fire Extinguisher", 4, 0, 1, {"charges": 3, "scares": True, "fightsFire": True}),
     ("harpoon",      "Harpoon Gun",      1, 5, 2, {"charges": 1, "roomDamagePercent": 75, "effect": "killRoom"}),
     ("laser",        "Laser Pistol",     3, 2, 2, {"charges": 8, "roomDamagePercent": 30}),
     ("net",          "Net",              1, 0, 0, {"charges": 1, "breaksWhenSpent": True, "effect": "freeze", "catchBonus": 4}),
@@ -138,7 +155,8 @@ def links_from(directed, kind_of):
 
 def main(out_path):
     room_count = len(ROOMS)
-    rooms = [{"id": rid, "name": name, "deck": deck(i), **({"grilleRemoved": True} if rid in OPEN_GRILLES else {})}
+    rooms = [{"id": rid, "name": name, "deck": deck(i), **({"grilleRemoved": True} if rid in OPEN_GRILLES else {}),
+              **({"features": FEATURES[rid]} if rid in FEATURES else {})}
              for i, (rid, name) in enumerate(ROOMS)]
     rooms += [{"id": duct_id(i), "name": ROOMS[i][1] + " duct", "deck": deck(i), "kind": "duct"}
               for i in range(room_count - 1)]  # the shuttle has no duct

@@ -38,7 +38,7 @@ internal object DetectionSystem {
             }
         }
         for (holder in world.actors.values) {
-            if (holder.isDown || !holder.isLoyalCrew) continue
+            if (holder.outOfPlay || !holder.isLoyalCrew) continue
             val item = detector(holder, world) ?: continue
             val movement = movementNear(holder, world)
             if (readings[item.id] == movement) continue
@@ -46,7 +46,7 @@ internal object DetectionSystem {
             scope.emit(GameEvent.DetectorReading(scope.tick, holder.id, item.id, movement, Visibility.Perceived(setOf(holder.id))))
         }
         // Forget readings for detectors no longer in use, so picking one up again reports afresh.
-        val inUse = world.actors.values.filter { !it.isDown }.mapNotNull { detector(it, world)?.id }.toSet()
+        val inUse = world.actors.values.filter { !it.outOfPlay }.mapNotNull { detector(it, world)?.id }.toSet()
         readings.keys.retainAll(inUse)
     }
 
@@ -61,6 +61,6 @@ internal object DetectionSystem {
     /** Anything alive and loose in a location next to [holder]'s, not counting [holder]'s own. */
     private fun movementNear(holder: Actor, world: World): Boolean {
         val near = world.room(holder.room).exits.map { it.to }.toSet() - holder.room
-        return world.actors.values.any { !it.isDown && it.caughtIn == null && it.room in near }
+        return world.actors.values.any { !it.outOfPlay && it.caughtIn == null && it.room in near }
     }
 }

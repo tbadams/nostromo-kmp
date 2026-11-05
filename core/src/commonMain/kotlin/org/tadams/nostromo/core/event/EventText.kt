@@ -58,11 +58,35 @@ class EventText(scenario: Scenario) {
         is GameEvent.Noise -> noise(event)
         is GameEvent.DetectorReading ->
             if (event.movement) "${name(event.holder)}'s ${item(event.item)}: movement nearby" else "${name(event.holder)}'s ${item(event.item)}: all clear"
-        is GameOver -> when (event.result.ending) {
-            Ending.CREATURE_KILLED -> "The creature is dead"
-            Ending.CREW_GONE -> "The whole crew is down"
+        is GameEvent.DestructArmed -> "SELF-DESTRUCT ARMED by ${name(event.actor)}"
+        is GameEvent.DestructDisarmed -> "Self-destruct overridden by ${name(event.actor)}"
+        is GameEvent.AirlockBlown -> "WARNING: ${room(event.airlock)} depressurised"
+        is GameEvent.AirlockSealed -> "${room(event.airlock)}: pressure restored"
+        is GameEvent.BlownOut -> "${name(event.actor)} is blown out of ${room(event.airlock)}"
+        is GameEvent.IntruderEntering -> "INTRUDER ENTERING ${room(event.room)}"
+        is GameEvent.WentToSleep -> "${name(event.actor)} goes into hypersleep"
+        is GameEvent.LaunchCountermanded -> "LAUNCH COUNTERMANDED: ${event.missing.joinToString { name(it) }} not aboard"
+        is GameEvent.Launched -> "The shuttle launches"
+        is GameEvent.FireStarted -> "WARNING: fire in ${room(event.room)}"
+        is GameEvent.FireFought -> "${name(event.actor)} fights the fire in ${room(event.room)}"
+        is GameEvent.FireOut -> "Fire extinguished in ${room(event.room)}"
+        is GameEvent.DamageWarning -> when (event.kind) {
+            WarningKind.SYSTEM_FAILURE -> "WARNING: systems failing in ${room(event.room)}"
+            WarningKind.STRUCTURAL -> "WARNING: structural damage in ${room(event.room)}"
         }
+        is GameEvent.OxygenCritical -> "WARNING: oxygen critical"
+        is GameOver -> ending(event.result.ending, event.result.destructArmed)
         is DiceRolled -> "Roll for ${event.reason}: ${event.result} (0-${event.sides - 1})"
+    }
+
+    /** One line for how the game ended. */
+    fun ending(ending: Ending, destructArmed: Boolean) = when (ending) {
+        Ending.CREATURE_KILLED -> "The creature has been killed"
+        Ending.CREW_GONE -> "Humanoid life levels minimal"
+        Ending.LAUNCHED -> if (destructArmed) "The shuttle is launched. The ship will explode behind you" else
+            "The shuttle is launched. The creature will be unleashed upon Earth"
+        Ending.OXYGEN_OUT -> "Life support systems exhausted"
+        Ending.SHIP_DESTROYED -> "The ship has exploded"
     }
 
     /** Raw line for a sound, naming where and who (debug detail). */
@@ -100,6 +124,13 @@ class EventText(scenario: Scenario) {
         is Action.Drop -> "Drop ${item(action.item)}"
         is Action.Swap -> "Swap to ${item(action.item)}"
         is Action.Catch -> "Catch ${name(action.target)}"
+        Action.ArmDestruct -> "Arm self-destruct"
+        Action.DisarmDestruct -> "Override self-destruct"
+        is Action.BlowAirlock -> "Blow ${room(action.airlock)}"
+        is Action.SealAirlock -> "Seal ${room(action.airlock)}"
+        Action.Hypersleep -> "Hypersleep"
+        Action.Launch -> "Launch shuttle"
+        Action.FightFire -> "Fight fire"
     }
 
     private fun doing(action: Action): String = when (action) {
@@ -111,6 +142,7 @@ class EventText(scenario: Scenario) {
         is Action.Drop -> "dropping the ${item(action.item)}"
         is Action.Swap -> "swapping to the ${item(action.item)}"
         is Action.Catch -> "catching ${name(action.target)}"
+        else -> option(action).lowercase()
     }
 
     /** Name of [item]'s type, e.g. "Laser Pistol". */
@@ -133,6 +165,11 @@ class EventText(scenario: Scenario) {
         FailReason.GRILLE_ALREADY_REMOVED -> "the grille is already off"
         FailReason.NOT_A_TARGET -> "that can't be attacked"
         FailReason.NEEDS_CATCHER -> "they need something to catch it in"
+        FailReason.WRONG_ROOM -> "not from here"
+        FailReason.ALREADY_DONE -> "it's already done"
+        FailReason.NO_FIRE -> "there's no fire here"
+        FailReason.NEEDS_EXTINGUISHER -> "they need an extinguisher"
+        FailReason.ITEM_EMPTY -> "it's empty"
     }
 
     private fun name(id: ActorId) = actorNames[id] ?: id.value

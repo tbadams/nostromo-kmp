@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.ai
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.rng.ODDS
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.TickScope
 
@@ -29,7 +30,7 @@ internal object Wumpus : Brain {
         if (attacks.isNotEmpty()) return attacks[scope.roll(attacks.size, "${actor.name} picks a victim")]
 
         if (Action.RemoveGrille in options &&
-            scope.roll(16, "${actor.name} tries the grille") < scope.rules.creatureGrilleOdds
+            scope.roll(ODDS, "${actor.name} tries the grille") < scope.rules.creatureGrilleOdds
         ) {
             return Action.RemoveGrille
         }
@@ -38,7 +39,7 @@ internal object Wumpus : Brain {
             world.room(actor.room).exits.any { it.to == move.to && it.kind == LinkKind.GRILLE }
         }
         if (grilleMove != null &&
-            scope.roll(16, "${actor.name} takes the open grille") < scope.rules.creatureGrilleMoveOdds
+            scope.roll(ODDS, "${actor.name} takes the open grille") < scope.rules.creatureGrilleMoveOdds
         ) {
             return grilleMove
         }

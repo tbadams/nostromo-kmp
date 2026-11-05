@@ -24,6 +24,8 @@ data class GameState(
     val actors: List<ActorState>,
     /** In scenario order, held ones included. */
     val items: List<ItemState> = emptyList(),
+    /** Ship-wide status for the status bar. */
+    val ship: ShipState = ShipState(),
 ) {
     /**
      * Lookup actor state by ID.
@@ -51,6 +53,9 @@ data class GameState(
                     room.id, room.name, room.deck, room.kind, room.exits.map { it.to }, room.damagePercent,
                     grilleRemoved = Grilles.roomOf(room.id, world)?.grilleRemoved,
                     passages = room.exits.filter { it.kind != LinkKind.GRILLE }.map { it.to },
+                    burning = room.burning,
+                    structural = room.damagePercent >= rules.structuralAtPercent,
+                    blown = room.blown,
                 )
             },
             actors = world.actors.values.map { actor ->
@@ -69,9 +74,16 @@ data class GameState(
                     takesOrders = actor.takesOrders,
                     caught = actor.caughtIn != null,
                     frozen = actor.frozenUntil > tick,
+                    asleep = actor.asleep,
+                    gone = actor.gone,
                 )
             },
             items = world.items.values.filterNot { it.destroyed }.map { ItemState(it.id, it.type.name, it.room, it.charges) },
+            ship = ShipState(
+                oxygen = world.ship.oxygen.toInt(),
+                oxygenCritical = world.ship.oxygen <= rules.oxygenCriticalAt,
+                destructTicksLeft = world.ship.destructTicksLeft,
+            ),
         )
     }
 }
@@ -89,6 +101,22 @@ data class RoomState(
     val grilleRemoved: Boolean? = null,
     /** [exits] not through a grille: doors and ladders from a room, duct links from a duct. */
     val passages: List<RoomId> = emptyList(),
+    /** On fire. */
+    val burning: Boolean = false,
+    /** At or past the structural damage warning. */
+    val structural: Boolean = false,
+    /** An airlock that's been blown and not re-sealed. */
+    val blown: Boolean = false,
+)
+
+/**
+ * Ship-wide status. [oxygen] is in the original's units (starts at 7500); [destructTicksLeft] is null
+ * while the self-destruct isn't armed. Show times as real time with [Time.clock].
+ */
+data class ShipState(
+    val oxygen: Int = 0,
+    val oxygenCritical: Boolean = false,
+    val destructTicksLeft: Long? = null,
 )
 
 /** A character, creature or animal as the UI sees it. */
@@ -121,6 +149,10 @@ data class ActorState(
     val caught: Boolean = false,
     /** Netted and unable to act for now. */
     val frozen: Boolean = false,
+    /** In hypersleep: out of play, safe. */
+    val asleep: Boolean = false,
+    /** Lost from the ship (blown out of an airlock). */
+    val gone: Boolean = false,
 ) {
     val isDown get() = health <= 0
 }

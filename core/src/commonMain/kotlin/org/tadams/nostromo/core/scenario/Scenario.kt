@@ -56,6 +56,8 @@ data class ItemTypeDef(
     val effect: ItemEffect? = null,
     /** Whether it works as a motion detector while in use (the tracker). */
     val detects: Boolean = false,
+    /** Whether it can fight fires while in use, one charge per use (the extinguisher). */
+    val fightsFire: Boolean = false,
     /**
      * Whether it can catch an animal while in use, and how much easier it makes that (the cat box 0,
      * the net 4). Null if it can't.
@@ -129,7 +131,37 @@ data class RoomDef(
      * place block the way until someone removes them. Original: all in place except Corridor 6's.
      */
     val grilleRemoved: Boolean = false,
+    /** What's special about this room: controls, airlocks, the shuttle, what can burn (docs/mechanics.md §3, §10). */
+    val features: Set<RoomFeature> = emptySet(),
 )
+
+/** Special rooms (docs/mechanics.md §3, §7, §10). */
+@Serializable
+enum class RoomFeature {
+    /** Crew here can arm and override the self-destruct. Original: the command centre. */
+    @SerialName("destructControls") DESTRUCT_CONTROLS,
+
+    /** Crew here can blow and seal every [AIRLOCK]. Original: Corridor 6. */
+    @SerialName("airlockControls") AIRLOCK_CONTROLS,
+
+    /** Can be blown from the airlock controls, removing everything inside. */
+    @SerialName("airlock") AIRLOCK,
+
+    /** Where a creature that survives being blown out comes back in ("Intruder entering"). Original: the shuttle bay. */
+    @SerialName("intruderEntry") INTRUDER_ENTRY,
+
+    /** Crew here can go into hypersleep, leaving play safely. Original: the cryo vault. */
+    @SerialName("hypersleep") HYPERSLEEP,
+
+    /** Crew here can launch the shuttle. Original: the shuttle itself. */
+    @SerialName("launch") LAUNCH,
+
+    /** Catches fire at [Rules.fireAtPercent] damage. Original: the three engine rooms. */
+    @SerialName("flammable") FLAMMABLE,
+
+    /** A system the ship depends on; a failure warning at [Rules.fireAtPercent] damage. Original: command centre, computer, life support, shuttle bay. */
+    @SerialName("keySystem") KEY_SYSTEM,
+}
 
 /** Whether a location is a normal room or a duct segment. */
 @Serializable
@@ -212,6 +244,8 @@ enum class ActorKind(
         setOf(
             ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE,
             ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH,
+            ActionType.ARM_DESTRUCT, ActionType.DISARM_DESTRUCT, ActionType.BLOW_AIRLOCK, ActionType.SEAL_AIRLOCK,
+            ActionType.HYPERSLEEP, ActionType.LAUNCH, ActionType.FIGHT_FIRE,
         ),
     ),
     @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE, ActionType.PROWL)),

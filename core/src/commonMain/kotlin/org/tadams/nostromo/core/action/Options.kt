@@ -18,7 +18,7 @@ internal object Options {
      * menus don't jump around and seeded AI choices are reproducible.
      */
     fun forActor(actor: Actor, world: World, rules: Rules): List<Option> {
-        if (actor.isDown) return emptyList()
+        if (actor.outOfPlay) return emptyList()
         return ActionDefs.all
             .filter { it.type in actor.capabilities }
             .flatMap { def -> def.candidates(actor, world) }

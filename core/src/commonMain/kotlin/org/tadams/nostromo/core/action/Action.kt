@@ -56,6 +56,41 @@ sealed interface Action {
     data class Catch(val target: ActorId) : Action {
         override val type get() = ActionType.CATCH
     }
+
+    /** Start the self-destruct, at the destruct controls. */
+    data object ArmDestruct : Action {
+        override val type get() = ActionType.ARM_DESTRUCT
+    }
+
+    /** Stop the self-destruct, at the destruct controls. Arming again starts the clock from the top. */
+    data object DisarmDestruct : Action {
+        override val type get() = ActionType.DISARM_DESTRUCT
+    }
+
+    /** Blow [airlock] from the airlock controls: everything inside is lost. */
+    data class BlowAirlock(val airlock: RoomId) : Action {
+        override val type get() = ActionType.BLOW_AIRLOCK
+    }
+
+    /** Re-seal a blown [airlock], from the airlock controls. */
+    data class SealAirlock(val airlock: RoomId) : Action {
+        override val type get() = ActionType.SEAL_AIRLOCK
+    }
+
+    /** Go into hypersleep here: out of play, safe, items left behind. */
+    data object Hypersleep : Action {
+        override val type get() = ActionType.HYPERSLEEP
+    }
+
+    /** Launch the shuttle from here, if everyone needed is aboard. */
+    data object Launch : Action {
+        override val type get() = ActionType.LAUNCH
+    }
+
+    /** Use the extinguisher in use on the fire here. */
+    data object FightFire : Action {
+        override val type get() = ActionType.FIGHT_FIRE
+    }
 }
 
 /**
@@ -87,6 +122,15 @@ enum class ActionType(val defaultSeconds: Double) {
 
     /** "Get Jones" was an instant menu choice in the original. */
     @SerialName("catch") CATCH(0.1),
+
+    // Ship actions: instant menu choices in the original, so one tick (see Rules.unslowedActions).
+    @SerialName("armDestruct") ARM_DESTRUCT(0.1),
+    @SerialName("disarmDestruct") DISARM_DESTRUCT(0.1),
+    @SerialName("blowAirlock") BLOW_AIRLOCK(0.1),
+    @SerialName("sealAirlock") SEAL_AIRLOCK(0.1),
+    @SerialName("hypersleep") HYPERSLEEP(0.1),
+    @SerialName("launch") LAUNCH(0.1),
+    @SerialName("fightFire") FIGHT_FIRE(0.1),
 }
 
 /** Player input. Applied at the start of the next tick. */

@@ -5,6 +5,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.tadams.nostromo.core.ai.Brains
 import org.tadams.nostromo.core.model.RoomId
+import org.tadams.nostromo.core.rng.ODDS
 
 /** A scenario couldn't be loaded or failed validation; [problems] lists every issue found. */
 class ScenarioException(val problems: List<String>) :
@@ -102,10 +103,25 @@ object ScenarioValidator {
             if (crowdedWaitSeconds <= 0) add("rules.crowdedWaitSeconds must be positive")
             if (ductMorale < 0 || bodyFoundMorale < 0) add("rules.ductMorale and rules.bodyFoundMorale must not be negative")
         }
-        if (scenario.rules.creatureGrilleOdds !in 0..16) add("rules.creatureGrilleOdds must be 0-16")
-        if (scenario.rules.creatureGrilleMoveOdds !in 0..16) add("rules.creatureGrilleMoveOdds must be 0-16")
+        if (scenario.rules.creatureGrilleOdds !in 0..ODDS) add("rules.creatureGrilleOdds must be 0-$ODDS")
+        if (scenario.rules.creatureGrilleMoveOdds !in 0..ODDS) add("rules.creatureGrilleMoveOdds must be 0-$ODDS")
         if (scenario.rules.fleeDamageDivisor < 1) add("rules.fleeDamageDivisor must be at least 1")
         if (scenario.rules.netFreezeSeconds <= 0) add("rules.netFreezeSeconds must be positive")
+        with(scenario.rules) {
+            if (destructSeconds <= 0 || fireIntervalSeconds <= 0) add("rules.destructSeconds and rules.fireIntervalSeconds must be positive")
+            if (oxygenStart <= 0 || oxygenPerCrewSecond < 0) add("rules.oxygenStart must be positive and rules.oxygenPerCrewSecond not negative")
+            if (fireFightsNeeded.isEmpty() || fireFightsNeeded.any { it.uses < 1 }) add("rules.fireFightsNeeded must list at least one entry, each needing 1+ uses")
+            if (airlockSurvivalOdds !in 0..ODDS) add("rules.airlockSurvivalOdds must be 0-$ODDS")
+        }
+        for (room in scenario.rooms) {
+            if (room.kind == RoomKind.DUCT && room.features.isNotEmpty()) add("Duct '${room.id}' has features; only rooms can")
+        }
+        val airlocks = scenario.rooms.count { RoomFeature.AIRLOCK in it.features }
+        val airlockControls = scenario.rooms.count { RoomFeature.AIRLOCK_CONTROLS in it.features }
+        if (airlocks > 0 && airlockControls == 0) add("Scenario has airlocks but no room with airlockControls")
+        for (feature in listOf(RoomFeature.AIRLOCK_CONTROLS, RoomFeature.INTRUDER_ENTRY)) {
+            if (scenario.rooms.count { feature in it.features } > 1) add("More than one room has $feature")
+        }
         if (scenario.rules.prowlWeight < 0) add("rules.prowlWeight must not be negative")
         for ((type, seconds) in scenario.rules.actionSeconds) {
             if (seconds <= 0) add("rules.actionSeconds for $type must be positive")

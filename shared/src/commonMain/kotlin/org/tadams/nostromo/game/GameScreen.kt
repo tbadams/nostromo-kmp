@@ -46,14 +46,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.tadams.nostromo.core.ActorState
 import org.tadams.nostromo.core.GameState
-import org.tadams.nostromo.core.Ending
 import org.tadams.nostromo.core.GameResult
+import org.tadams.nostromo.core.Rating
 import org.tadams.nostromo.core.RoomState
 import org.tadams.nostromo.core.Time
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.action.ActionType
 import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.rng.ODDS
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.ui.Amber
@@ -91,6 +92,11 @@ fun GameScreen(viewModel: GameViewModel) {
     ) {
         StatusBar(ui, Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
+        val result = ui.game.result
+        if (result != null) {
+            EndScreen(ui, result, viewModel::setDebug, Modifier.weight(1f).fillMaxWidth())
+            return@Column
+        }
         Row(Modifier.weight(1f).fillMaxWidth()) {
             EventLog(ui, viewModel::setDebug, Modifier.width(400.dp).fillMaxHeight())
             Spacer(Modifier.width(8.dp))
@@ -120,20 +126,53 @@ private fun handleKey(key: Key, shift: Boolean, viewModel: GameViewModel): Boole
 }
 
 /**
- * Ship-wide status. Today just the clock and the outcome.
- * TODO add the oxygen countdown (always) and the self-destruct timer (only while armed) when :core
- *  has them (build step 5). Show both as real-time m:ss via Time.clock().
+ * Ship-wide status: the clock, oxygen (always), and the self-destruct countdown while it's armed,
+ * as real-time m:ss. Oxygen is shown in the original's units; it turns amber when critical.
  */
 @Composable
 private fun StatusBar(ui: GameUiState, modifier: Modifier) {
+    val ship = ui.game.ship
     Row(
         modifier.border(1.dp, DimGreen).padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MonoText("TIME ${clock(ui.game.tick)}", Green, bold = true)
+        MonoText("O2 ${ship.oxygen.toString().padStart(4, '0')}", if (ship.oxygenCritical) Amber else Green, bold = ship.oxygenCritical)
+        ship.destructTicksLeft?.let { MonoText("DESTRUCT ${Time.clock(it)}", Amber, bold = true) }
         Spacer(Modifier.weight(1f))
-        ui.game.result?.let { MonoText(resultText(it), Amber, bold = true) }
+        ui.game.result?.let { MonoText(ui.endingText, Amber, bold = true) }
+    }
+}
+
+/**
+ * The end-of-game report, replacing the game view: how it ended, who survived, escaped, slept or
+ * died, who the android was, and the Competence Rating in parts (docs/mechanics.md §10).
+ */
+@Composable
+private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) -> Unit, modifier: Modifier) {
+    fun names(ids: List<ActorId>) = ids.joinToString { ui.game.actor(it).name }.ifEmpty { "none" }
+    val asleep = ui.game.actors.filter { it.asleep }.map { it.id }
+    Row(modifier) {
+        Column(Modifier.weight(1f).fillMaxHeight().border(1.dp, Amber).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MonoText("GAME OVER", Amber, bold = true)
+            MonoText(ui.endingText, Amber, bold = true)
+            Spacer(Modifier.height(8.dp))
+            MonoText("Survivors:  ${names(result.survivors)}", Green)
+            if (result.escaped.isNotEmpty()) MonoText("Escaped:    ${names(result.escaped)}", Green)
+            if (asleep.isNotEmpty()) MonoText("Hypersleep: ${names(asleep)}", Green)
+            MonoText("Lost:       ${names(result.casualties)}", Green)
+            MonoText("Android:    ${result.android?.let { ui.game.actor(it).name } ?: "none"}", Green)
+            MonoText("Self-destruct ${if (result.destructArmed) "armed" else "not armed"}", Green)
+            Spacer(Modifier.height(8.dp))
+            MonoText("COMPETENCE RATING", Amber, bold = true)
+            MonoText("  Crew   ${result.rating.crew}", Green)
+            MonoText("  Damage ${result.rating.damage}", Green)
+            MonoText("  Time   ${result.rating.time}", Green)
+            MonoText("  Total  ${result.rating.total} / ${Rating.MAX}", Amber, bold = true)
+        }
+        Spacer(Modifier.width(8.dp))
+        EventLog(ui, onDebug, Modifier.width(400.dp).fillMaxHeight())
     }
 }
 
@@ -182,6 +221,8 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
                 MonoText("speed penalty +${def.speedPenaltySeconds}s", DimGreen)
                 // Total wait: own base time plus the speed penalty, rounded to the tick as the simulation does.
                 MonoText("grille removal ${Time.seconds(Time.ticks(grille + def.speedPenaltySeconds))}", DimGreen)
+                // Chances in ODDS of catching the cat with the box (the net adds its bonus).
+                MonoText("cat affinity ${ODDS - def.catchDifficulty}", DimGreen)
             }
         }
     }
@@ -279,12 +320,11 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
         byDeck.forEach { (deck, rooms) ->
             item { MonoText(deck.uppercase(), Amber, bold = true) }
             items(rooms.filter(::shown)) { room ->
-                val names = visibleIn(room).joinToString {
+                val names = visibleIn(room).filterNot { it.asleep || it.gone }.joinToString {
                     when (condition(it, ui)) {
-                        Condition.UP -> it.name
                         Condition.DOWN -> "${it.name} (down)"
                         // Not given away by the map: they're wherever they fell, but nobody knows.
-                        Condition.NO_RESPONSE -> it.name
+                        else -> it.name
                     }
                 }
                 // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
@@ -297,7 +337,16 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
                     else -> Green
                 }
                 val marker = if (room.id in destinations) "> " else "  "
-                MonoText("$marker${room.name.padEnd(22)} $names", colour)
+                // Ship-wide alarms, so everyone knows: fire, structural damage, a blown airlock.
+                val alarms = listOfNotNull(
+                    "FIRE".takeIf { room.burning },
+                    "STRUCTURAL".takeIf { room.structural },
+                    "BLOWN".takeIf { room.blown },
+                ).joinToString(" ")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MonoText("$marker${room.name.padEnd(22)} $names", colour)
+                    if (alarms.isNotEmpty()) MonoText(alarms, Amber, bold = true)
+                }
             }
         }
     }
@@ -356,7 +405,7 @@ private fun MonoText(text: String, colour: Color, bold: Boolean = false) {
 }
 
 /** What the player can tell about a crew member's condition. */
-private enum class Condition { UP, NO_RESPONSE, DOWN }
+private enum class Condition { UP, NO_RESPONSE, DOWN, ASLEEP, LOST }
 
 /**
  * [actor]'s condition as the player knows it. A crew member who is down but whom nobody has found
@@ -365,12 +414,21 @@ private enum class Condition { UP, NO_RESPONSE, DOWN }
  * same way: it has stopped answering, and the player finds out why from what the crew see.
  */
 private fun condition(actor: ActorState, ui: GameUiState) = when {
+    actor.asleep -> Condition.ASLEEP
+    // Blown out of an airlock: everyone knows the airlock was blown, so the loss is no secret.
+    actor.gone -> Condition.LOST
     actor.isDown -> if (actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug) Condition.DOWN else Condition.NO_RESPONSE
     actor.kind == ActorKind.CREW && !actor.takesOrders -> Condition.NO_RESPONSE
     else -> Condition.UP
 }
 
-private fun Condition.label() = if (this == Condition.DOWN) "DOWN" else "NO RESPONSE"
+private fun Condition.label() = when (this) {
+    Condition.UP -> ""
+    Condition.DOWN -> "DOWN"
+    Condition.NO_RESPONSE -> "NO RESPONSE"
+    Condition.ASLEEP -> "HYPERSLEEP"
+    Condition.LOST -> "LOST"
+}
 
 private fun occupants(game: GameState, room: RoomState): List<ActorState> = game.actors.filter { it.room == room.id }
 
@@ -379,17 +437,6 @@ private fun clock(tick: Long): String {
     return "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 }
 
-// TODO replace with the full endgame report (build step 5; docs/mechanics.md §10): an end screen that
-//  replaces the game view and shows what happened, who died, who the android was, and the
-//  Competence Rating (crew health + undamaged rooms + oxygen left), revealed line by line as
-//  nostromo-js did. :core's GameResult already carries the ending, casualties, android and rating parts.
-private fun resultText(result: GameResult): String {
-    val ending = when (result.ending) {
-        Ending.CREATURE_KILLED -> "The creature is dead. You win."
-        Ending.CREW_GONE -> "The crew is lost."
-    }
-    return "$ending  Competence rating: ${result.rating.total}"
-}
 
 private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Move -> "moving to ${game.room(action.to).name}"
@@ -400,4 +447,11 @@ private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Drop -> "dropping the ${game.item(action.item).name}"
     is Action.Swap -> "swapping to the ${game.item(action.item).name}"
     is Action.Catch -> "catching ${game.actor(action.target).name}"
+    Action.ArmDestruct -> "arming the self-destruct"
+    Action.DisarmDestruct -> "overriding the self-destruct"
+    is Action.BlowAirlock -> "blowing ${game.room(action.airlock).name}"
+    is Action.SealAirlock -> "sealing ${game.room(action.airlock).name}"
+    Action.Hypersleep -> "going into hypersleep"
+    Action.Launch -> "launching the shuttle"
+    Action.FightFire -> "fighting the fire"
 }

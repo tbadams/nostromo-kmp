@@ -34,6 +34,8 @@ data class GameUiState(
     val debug: Boolean,
     /** The scenario being played, for static data such as crew stats. */
     val scenario: Scenario,
+    /** How the game ended, in words; empty while it's still going. */
+    val endingText: String = "",
 )
 
 /**
@@ -128,14 +130,18 @@ class GameViewModel(private val scenario: Scenario, seed: Long) : ViewModel() {
 
     private fun refresh() = _state.update { snapshot(it.selected, it.debug) }
 
-    private fun snapshot(selected: ActorId?, debug: Boolean) = GameUiState(
-        game = sim.state(),
-        selected = selected,
-        actions = selected?.let(sim::availableActions).orEmpty(),
-        log = log,
-        debug = debug,
-        scenario = scenario,
-    )
+    private fun snapshot(selected: ActorId?, debug: Boolean): GameUiState {
+        val game = sim.state()
+        return GameUiState(
+            game = game,
+            selected = selected,
+            actions = selected?.let(sim::availableActions).orEmpty(),
+            log = log,
+            debug = debug,
+            scenario = scenario,
+            endingText = game.result?.let { sim.text.ending(it.ending, it.destructArmed) }.orEmpty(),
+        )
+    }
 
     private companion object {
         const val MAX_CATCH_UP = 50L

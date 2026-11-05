@@ -75,8 +75,8 @@ Each system is a small function over `World` plus a `TickScope` (dice, event sin
 3. `RoleSystem`: the android's reveal (roles are handed out once, before the first tick)
 4. `BrainSystem`: AI for the creature, the android, the cat and crew reflexes (actors with an AI decide when they're idle)
 5. `MoraleSystem`: the morale rules (base and effective morale, worked out on demand) and the events that change base morale
-6. `HazardSystem`: room damage, fire and spread, oxygen (build step 5)
-7. `ShipSystem`: destruct clock, airlocks, launch checks (build step 5)
+6. `HazardSystem`: room damage thresholds, fire, oxygen
+7. `ShipSystem`: the destruct clock (arming, airlocks and launch are actions)
 8. `DetectionSystem`: trackers, sounds, the cat's unease
 9. `EndSystem`: win and lose checks, and scoring
 
@@ -194,6 +194,9 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Detection and sounds (`systems/DetectionSystem.kt`): door and grille sounds as ship-wide `Noise` events; the narrator logs them only when nobody saw the cause. Detectors (tracker, caught cat) report changes to the holder, and an all-clear gives +1 effective morale.
    - Differs from the original: the tracker reports each holder's reading, not just the selected crew member's; the cat avoids the creature's room rather than moving again after landing in it; anyone can be the android or the host.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
+   - Done (`systems/HazardSystem.kt`, `action/ShipDefs.kt`, `systems/EndSystem.kt`): special rooms are `RoomDef.features` (destruct and airlock controls, airlocks, intruder entry, hypersleep, launch, flammable, key systems). At 30% damage flammable rooms catch fire and key systems warn; at 70% a structural warning; any room at 100% blows up the ship. Fire adds 5% every 7.4 s until fought out with an extinguisher (1/2/3 goes by damage). The self-destruct runs 7:00 real time. Airlocks lose everything inside; an unhurt creature survives 2/16 and comes back at the shuttle bay. Hypersleep takes crew out of play. Launch needs every crew member in play (an unrevealed android too) and the cat aboard. All six endings and the Competence Rating table from mechanics §10.
+   - UI: oxygen and the destruct clock in the status bar; FIRE / STRUCTURAL / BLOWN on the map; an end screen with the rating in parts.
+   - Differs from the original: oxygen is used per breathing crew member (its 2 × N rate drained fastest with one missing); the destruct runs 7:00 real time (its "5:00" was about 7.4 minutes); the fire-fighting count resets once a fire is out; fire never spreads, as there.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
    - TODO real audio for the door and grille sounds (and the tracker's beep). Today they're log lines from the narrator (`GameEvent.Noise`); playing a sound needs a small `expect`/`actual` audio player per platform in `:shared`.
    - Narrator idea: hide the "starts moving to …" and "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew.

@@ -233,6 +233,74 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    // ---- The ship. Alarms and announcements are heard ship-wide.
+
+    /** [actor] armed the self-destruct; it goes off in [ticksLeft]. */
+    data class DestructArmed(override val tick: Long, val actor: ActorId, val ticksLeft: Long) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] overrode the self-destruct. */
+    data class DestructDisarmed(override val tick: Long, val actor: ActorId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] blew [airlock]. */
+    data class AirlockBlown(override val tick: Long, val actor: ActorId, val airlock: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] re-sealed [airlock]. */
+    data class AirlockSealed(override val tick: Long, val actor: ActorId, val airlock: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] was lost when [airlock] was blown. Hidden: the crew know only that the airlock was blown. */
+    data class BlownOut(override val tick: Long, val actor: ActorId, val airlock: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Hidden
+    }
+
+    /** [actor] survived being blown out and came back in at [room] ("Intruder entering"). */
+    data class IntruderEntering(override val tick: Long, val actor: ActorId, val room: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] went into hypersleep. */
+    data class WentToSleep(override val tick: Long, val actor: ActorId, override val visibility: Visibility) : GameEvent
+
+    /** [actor] tried to launch, but [missing] aren't aboard. */
+    data class LaunchCountermanded(override val tick: Long, val actor: ActorId, val missing: List<ActorId>) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] launched the shuttle. */
+    data class Launched(override val tick: Long, val actor: ActorId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [room] caught fire. */
+    data class FireStarted(override val tick: Long, val room: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** [actor] used the extinguisher on [room]'s fire; it's still burning. */
+    data class FireFought(override val tick: Long, val actor: ActorId, val room: RoomId, override val visibility: Visibility) : GameEvent
+
+    /** The fire in [room] is out. */
+    data class FireOut(override val tick: Long, val room: RoomId) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** A damage warning for [room]: [kind] says which. */
+    data class DamageWarning(override val tick: Long, val room: RoomId, val kind: WarningKind) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /** Oxygen is running low. */
+    data class OxygenCritical(override val tick: Long) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
     /** The game is over. Everyone hears about it. */
     data class GameOver(
         override val tick: Long,
@@ -261,8 +329,32 @@ enum class NoiseKind {
     GRILLE,
 }
 
+/** Damage warnings (docs/mechanics.md §3). */
+enum class WarningKind {
+    /** A key system failed at [org.tadams.nostromo.core.scenario.Rules.fireAtPercent]. */
+    SYSTEM_FAILURE,
+
+    /** Structural damage at [org.tadams.nostromo.core.scenario.Rules.structuralAtPercent]. */
+    STRUCTURAL,
+}
+
 /** Why an action couldn't start. */
 enum class FailReason {
+    /** It can only be done somewhere else (at the controls, in the vault, aboard the shuttle). */
+    WRONG_ROOM,
+
+    /** Already armed, disarmed, blown or sealed. */
+    ALREADY_DONE,
+
+    /** There's no fire here. */
+    NO_FIRE,
+
+    /** Fighting a fire needs an extinguisher in use. */
+    NEEDS_EXTINGUISHER,
+
+    /** The item in use has no charges left. */
+    ITEM_EMPTY,
+
     /** Not something that can be attacked (the cat is caught, not hit). */
     NOT_A_TARGET,
 

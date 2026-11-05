@@ -5,6 +5,7 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.rng.ODDS
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.scenario.Rules
@@ -81,7 +82,7 @@ internal object CatchDef : ActionDef<Action.Catch> {
         val item = world.inUse(actor) ?: return
         val needed = actor.catchDifficulty - (item.type.catchBonus ?: 0)
         val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
-        if (scope.roll(16, "${actor.name} catches ${target.name} (needs $needed+)") >= needed) {
+        if (scope.roll(ODDS, "${actor.name} catches ${target.name} (needs $needed+)") >= needed) {
             item.caught = target.id
             target.caughtIn = item.id
             target.current = null

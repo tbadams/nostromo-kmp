@@ -33,6 +33,12 @@ import org.tadams.nostromo.core.systems.MoraleSystem
  */
 internal object ObedienceGate {
 
+    private val NEVER_REFUSED = setOf(
+        ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH,
+        ActionType.ARM_DESTRUCT, ActionType.DISARM_DESTRUCT, ActionType.BLOW_AIRLOCK, ActionType.SEAL_AIRLOCK,
+        ActionType.HYPERSLEEP, ActionType.LAUNCH, ActionType.FIGHT_FIRE,
+    )
+
     /** What a crew member does with an order. */
     sealed interface Verdict {
         data object Obey : Verdict
@@ -49,7 +55,8 @@ internal object ObedienceGate {
     /** Whether [actor] will do [action], checked as it starts. Only loyal crew can refuse or panic. */
     fun judge(actor: Actor, world: World, action: Action, rules: Rules, scope: TickScope): Verdict {
         if (!actor.isLoyalCrew) return Verdict.Obey
-        if (action is Action.Get || action is Action.Drop || action is Action.Swap || action is Action.Catch) return Verdict.Obey
+        // Instant menu choices in the original, outside its gate: items, and the ship's controls.
+        if (action.type in NEVER_REFUSED) return Verdict.Obey
         if (actor.isAndroid) {
             val target = (action as? Action.Attack)?.let { world.actors.getValue(it.target) }
             if (target?.kind != ActorKind.CREATURE) return Verdict.Obey

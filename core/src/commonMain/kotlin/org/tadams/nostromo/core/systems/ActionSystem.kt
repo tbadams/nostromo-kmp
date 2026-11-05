@@ -25,7 +25,7 @@ internal object ActionSystem {
     fun run(world: World, scope: TickScope) {
         for (actor in world.actors.values) {
             // Netted, or caught in a box: nothing happens until they're free.
-            if (actor.isDown || actor.frozenUntil > scope.tick || actor.caughtIn != null) continue
+            if (actor.outOfPlay || actor.frozenUntil > scope.tick || actor.caughtIn != null) continue
             if (actor.current == null) startNext(world, actor, scope)
             val current = actor.current ?: continue
             current.remainingTicks--

@@ -6,6 +6,7 @@ import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.ItemTypeDef
 import org.tadams.nostromo.core.scenario.LinkKind
+import org.tadams.nostromo.core.scenario.RoomFeature
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.scenario.Scenario
 
@@ -16,7 +17,12 @@ class World(
     val actors: Map<ActorId, Actor>,
     /** In scenario order. */
     val items: Map<ItemId, Item> = emptyMap(),
+    /** Ship-wide state: oxygen, the self-destruct, whether the shuttle has gone. */
+    val ship: Ship = Ship(oxygen = 0.0),
 ) {
+    /** The first room with [feature], if any. */
+    fun roomWith(feature: RoomFeature): Room? = rooms.values.firstOrNull { feature in it.features }
+
     /** The room with [id]; it must exist. */
     fun room(id: RoomId): Room = rooms.getValue(id)
 
@@ -56,12 +62,12 @@ class World(
         return true
     }
 
-    /** Every actor currently in [room], down or not. */
-    fun occupants(room: RoomId): List<Actor> = actors.values.filter { it.room == room }
+    /** Every actor currently in [room], down or not; not those asleep or gone from the ship. */
+    fun occupants(room: RoomId): List<Actor> = actors.values.filter { it.room == room && !it.asleep && !it.gone }
 
-    /** Crew who can see and hear what happens in [rooms]: loyal crew standing in one of them, and up. */
+    /** Crew who can see and hear what happens in [rooms]: loyal crew standing in one of them, and in play. */
     fun witnesses(rooms: Collection<RoomId>): Set<ActorId> =
-        actors.values.filter { it.isLoyalCrew && !it.isDown && it.room in rooms }.mapTo(mutableSetOf()) { it.id }
+        actors.values.filter { it.isLoyalCrew && !it.outOfPlay && it.room in rooms }.mapTo(mutableSetOf()) { it.id }
 
     /** The item [actor] has in use, if any. */
     fun inUse(actor: Actor): Item? = actor.inUse?.let(::item)
@@ -90,7 +96,7 @@ class World(
                 if (!link.oneWay) exits.getValue(link.to) += Exit(link.from, link.kind)
             }
             val rooms = scenario.rooms.associate {
-                it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct()).apply {
+                it.id to Room(it.id, it.name, it.deck, it.kind, exits.getValue(it.id).distinct(), it.features).apply {
                     grilleRemoved = it.grilleRemoved
                 }
             }
@@ -106,9 +112,26 @@ class World(
             }
             val types = scenario.itemTypes.associateBy { it.id }
             val items = scenario.items.associate { it.id to Item(it.id, types.getValue(it.type), it.room) }
-            return World(rooms, actors, items)
+            return World(rooms, actors, items, Ship(oxygen = scenario.rules.oxygenStart.toDouble()))
         }
     }
+}
+
+/** Ship-wide state (docs/mechanics.md §10). */
+class Ship(
+    /** Oxygen left, in the original's units (starts at 7500). Fractional so per-tick use adds up exactly. */
+    var oxygen: Double,
+) {
+    /** Ticks until the self-destruct goes off, or null while it isn't armed. */
+    var destructTicksLeft: Long? = null
+
+    /** Whether the shuttle has launched. */
+    var launched: Boolean = false
+
+    /** Whether the "oxygen critical" warning has been given. */
+    var oxygenWarned: Boolean = false
+
+    val destructArmed get() = destructTicksLeft != null
 }
 
 /** A way out of a room, to [to], of the given [kind]. */
@@ -121,14 +144,34 @@ class Room(
     val deck: String?,
     val kind: RoomKind,
     val exits: List<Exit>,
+    val features: Set<RoomFeature> = emptySet(),
 ) {
     /**
-     * Structural damage, 0-100%. The creature's prowling and weapons (laser, harpoon) add to it.
-     * TODO room damage consequences (build step 5; mechanics.md §3): system failure warnings and
-     *  engine fires at 30%, a "structural damage" warning at 70%, the ship exploding at 100%. Also
-     *  fire spreading.
+     * Structural damage, 0-100%. The creature's prowling, weapons (laser, harpoon) and fire add to it;
+     * [damage] is the one way to change it. The consequences are in [org.tadams.nostromo.core.systems.HazardSystem].
      */
     var damagePercent: Int = 0
+        private set
+
+    /** Adds [percent] damage, up to 100. */
+    fun damage(percent: Int) {
+        damagePercent = (damagePercent + percent).coerceIn(0, 100)
+    }
+
+    /** On fire (flammable rooms only). */
+    var burning: Boolean = false
+
+    /** Extinguisher uses on the current fire. Reset when it goes out. */
+    var fireFights: Int = 0
+
+    /** Ticks until the fire here next does damage. */
+    var fireTimer: Int = 0
+
+    /** An airlock that's been blown: open to space until sealed. */
+    var blown: Boolean = false
+
+    /** Which damage warnings have already been given, so each is given once. */
+    val warned: MutableSet<Int> = mutableSetOf()
 
     /** Whether this room's grille to its duct is off. Only meaningful for rooms with a grille. */
     var grilleRemoved: Boolean = false
@@ -169,14 +212,26 @@ class Actor(
     /** Whether this android has turned on the crew. It then acts on its own and takes no orders. */
     var revealed: Boolean = false
 
+    /** In hypersleep: out of play, safe. Counts as not alive for the endings, as in the original. */
+    var asleep: Boolean = false
+
+    /**
+     * Gone from the ship: blown out of an airlock, or carried off. Not a body (nothing to find), and
+     * no longer anywhere; [room] keeps the last place they were.
+     */
+    var gone: Boolean = false
+
+    /** Out of play for good, whether down, asleep or gone. Such actors are skipped by every system. */
+    val outOfPlay get() = isDown || asleep || gone
+
     /** Netted: this actor does nothing until this tick. */
     var frozenUntil: Long = 0
 
     /** For an animal: the item it's been caught in, or null if it's loose. A caught animal goes where its holder goes. */
     var caughtIn: ItemId? = null
 
-    /** Whether this actor obeys orders: crew who are up and not a revealed android. */
-    val takesOrders get() = isCrew && !isDown && !revealed
+    /** Whether this actor obeys orders: crew in play who aren't a revealed android. */
+    val takesOrders get() = isCrew && !outOfPlay && !revealed
 
     /** On the crew's side: crew, except a revealed android. Only these count for morale, witnesses and the ending. */
     val isLoyalCrew get() = isCrew && !revealed

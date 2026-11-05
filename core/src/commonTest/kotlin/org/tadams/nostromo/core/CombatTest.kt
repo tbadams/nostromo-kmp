@@ -106,7 +106,9 @@ class CombatTest {
         assertTrue(result.creatureKilled)
         assertEquals(listOf(ROBY, HUNTER), result.survivors)
         assertEquals(emptyList(), result.casualties)
-        assertEquals(2 * 4 + 2 * 4, result.rating.total, "2 × health of each survivor")
+        assertEquals(2 * 4 + 2 * 4, result.rating.crew, "2 × health of each survivor")
+        assertEquals(3, result.rating.damage, "all three rooms under 20% damage")
+        assertEquals(2 * 7, result.rating.time, "a few seconds' use leaves the oxygen at 7,4xx: thousands digit 7")
         assertEquals(result, events.filterIsInstance<GameEvent.GameOver>().single().result)
         assertTrue(sim.tick().isEmpty(), "nothing happens after the game ends")
     }

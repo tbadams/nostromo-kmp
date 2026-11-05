@@ -49,11 +49,12 @@ internal object MoraleSystem {
     private fun findBodies(world: World, scope: TickScope) {
         val crew = world.actors.values.filter { it.isCrew }
         for (body in crew.filter { it.isDown && !it.bodyFound }) {
-            val finder = crew.firstOrNull { it.isLoyalCrew && !it.isDown && it.room == body.room } ?: continue
+            if (body.gone) continue
+            val finder = crew.firstOrNull { it.isLoyalCrew && !it.outOfPlay && it.room == body.room } ?: continue
             body.bodyFound = true
             val seenBy = Visibility.Perceived(world.witnesses(listOf(body.room)))
             scope.emit(GameEvent.BodyFound(scope.tick, finder.id, body.id, seenBy))
-            crew.filter { it.isLoyalCrew && !it.isDown }.forEach { adjust(it, -scope.rules.bodyFoundMorale) }
+            crew.filter { it.isLoyalCrew && !it.outOfPlay }.forEach { adjust(it, -scope.rules.bodyFoundMorale) }
         }
     }
 

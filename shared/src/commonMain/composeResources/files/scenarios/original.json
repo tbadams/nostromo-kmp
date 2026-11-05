@@ -5,12 +5,14 @@
     {
       "id": "airlock-1",
       "name": "Airlock 1",
-      "deck": "upper"
+      "deck": "upper",
+      "features": ["airlock"]
     },
     {
       "id": "airlock-2",
       "name": "Airlock 2",
-      "deck": "upper"
+      "deck": "upper",
+      "features": ["airlock"]
     },
     {
       "id": "armoury",
@@ -35,12 +37,14 @@
     {
       "id": "command-centre",
       "name": "Command Centre",
-      "deck": "middle"
+      "deck": "middle",
+      "features": ["destructControls", "keySystem"]
     },
     {
       "id": "computer-room",
       "name": "Computer Room",
-      "deck": "upper"
+      "deck": "upper",
+      "features": ["keySystem"]
     },
     {
       "id": "corridor-1",
@@ -71,7 +75,8 @@
       "id": "corridor-6",
       "name": "Corridor 6",
       "deck": "upper",
-      "grilleRemoved": true
+      "grilleRemoved": true,
+      "features": ["airlockControls"]
     },
     {
       "id": "corridor-7",
@@ -81,7 +86,8 @@
     {
       "id": "cryo-vault",
       "name": "Cryo Vault",
-      "deck": "middle"
+      "deck": "middle",
+      "features": ["hypersleep"]
     },
     {
       "id": "engineering",
@@ -91,17 +97,20 @@
     {
       "id": "engine-1",
       "name": "Engine Room 1",
-      "deck": "middle"
+      "deck": "middle",
+      "features": ["flammable"]
     },
     {
       "id": "engine-2",
       "name": "Engine Room 2",
-      "deck": "middle"
+      "deck": "middle",
+      "features": ["flammable"]
     },
     {
       "id": "engine-3",
       "name": "Engine Room 3",
-      "deck": "middle"
+      "deck": "middle",
+      "features": ["flammable"]
     },
     {
       "id": "engineering-stores",
@@ -131,7 +140,8 @@
     {
       "id": "life-support",
       "name": "Life Support",
-      "deck": "lower"
+      "deck": "lower",
+      "features": ["keySystem"]
     },
     {
       "id": "living-quarters",
@@ -166,7 +176,8 @@
     {
       "id": "shuttle-bay",
       "name": "Shuttle Bay",
-      "deck": "lower"
+      "deck": "lower",
+      "features": ["keySystem", "intruderEntry"]
     },
     {
       "id": "shuttle-stores",
@@ -176,7 +187,8 @@
     {
       "id": "shuttle",
       "name": "Shuttle",
-      "deck": "shuttle"
+      "deck": "shuttle",
+      "features": ["launch"]
     },
     {
       "id": "airlock-1-duct",
@@ -1057,7 +1069,8 @@
       "damage": 0,
       "morale": 1,
       "charges": 3,
-      "scares": true
+      "scares": true,
+      "fightsFire": true
     },
     {
       "id": "harpoon",

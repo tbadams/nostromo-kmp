@@ -8,6 +8,7 @@ import org.tadams.nostromo.core.model.Grilles
 import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.scenario.LinkKind
+import org.tadams.nostromo.core.scenario.RoomFeature
 import org.tadams.nostromo.core.TickScope
 
 /**
@@ -29,8 +30,10 @@ internal object MoveDef : ActionDef<Action.Move> {
 
     override fun complete(actor: Actor, world: World, action: Action.Move, scope: TickScope) {
         val from = actor.room
-        actor.room = action.to
-        val witnesses = world.witnesses(listOf(from, action.to))
-        scope.emit(GameEvent.ActorMoved(scope.tick, actor.id, from, action.to, Visibility.Perceived(witnesses)))
+        // A blown airlock is open to space: the original sent anyone moving into it to the controls instead.
+        val to = world.room(action.to).takeIf { it.blown }?.let { world.roomWith(RoomFeature.AIRLOCK_CONTROLS)?.id } ?: action.to
+        actor.room = to
+        val witnesses = world.witnesses(listOf(from, to))
+        scope.emit(GameEvent.ActorMoved(scope.tick, actor.id, from, to, Visibility.Perceived(witnesses)))
     }
 }
