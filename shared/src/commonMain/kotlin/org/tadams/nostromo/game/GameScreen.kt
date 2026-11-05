@@ -296,7 +296,7 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
         //  option.action.type is enough.
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(ui.actions) { option ->
-                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, colour = actionColour(option.action))
+                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, colour = actionColor(option.action))
             }
         }
     }
@@ -402,8 +402,11 @@ private fun TerminalButton(label: String, onClick: () -> Unit, colour: Color = G
     }
 }
 
-/** Action bar colour for [action]: red to attack, purple for the ship's controls and the cat, green otherwise. */
-private fun actionColour(action: Action): Color = when (action) {
+/**
+ * Action bar colour for [action]: red to attack, light green to move (matching the destinations on
+ * the map), purple for the ship's controls and the cat, green otherwise.
+ */
+private fun actionColor(action: Action): Color = when (action) {
     is Action.Attack -> Red
     is Action.Move -> LightGreen
     is Action.Catch, Action.ArmDestruct, Action.DisarmDestruct, is Action.BlowAirlock, is Action.SealAirlock,
