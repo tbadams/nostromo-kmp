@@ -57,6 +57,7 @@ class CrewDepthTest {
 
     private fun rules(roomCapacity: Int = 3) = Rules(
         actionSeconds = mapOf(ActionType.MOVE to 5.0, ActionType.ATTACK to 1.0),
+        friendlyFire = true,
         crowdedWaitSeconds = 1.0,
         roomCapacity = roomCapacity,
     )

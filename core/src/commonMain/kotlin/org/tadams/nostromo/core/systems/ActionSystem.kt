@@ -74,7 +74,7 @@ internal object ActionSystem {
 
     /** Starts [action] now if its own rules allow it, otherwise fails it. */
     private fun begin(world: World, actor: Actor, action: Action, scope: TickScope) {
-        val problem = ActionDefs.check(actor, world, action)
+        val problem = ActionDefs.check(actor, world, action, scope.rules)
         if (problem != null) {
             fail(actor, action, problem, scope)
             return
@@ -91,7 +91,7 @@ internal object ActionSystem {
      * rest of the queue, as in the original (docs/mechanics.md §2).
      */
     private fun complete(world: World, actor: Actor, action: Action, scope: TickScope) {
-        val problem = problemWith(world, actor, action)
+        val problem = problemWith(world, actor, action, scope)
         if (problem != null) {
             fail(actor, action, problem, scope)
             return
@@ -106,8 +106,8 @@ internal object ActionSystem {
     }
 
     /** Capability first, then the action's own rules. */
-    private fun problemWith(world: World, actor: Actor, action: Action): FailReason? =
-        if (action.type !in actor.capabilities) FailReason.NOT_CAPABLE else ActionDefs.check(actor, world, action)
+    private fun problemWith(world: World, actor: Actor, action: Action, scope: TickScope): FailReason? =
+        if (action.type !in actor.capabilities) FailReason.NOT_CAPABLE else ActionDefs.check(actor, world, action, scope.rules)
 
     private fun fail(actor: Actor, action: Action, problem: FailReason, scope: TickScope) {
         actor.queue.clear()

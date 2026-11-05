@@ -6,6 +6,7 @@ import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.Grilles
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.TickScope
 
@@ -16,7 +17,7 @@ internal object MoveDef : ActionDef<Action.Move> {
     override fun candidates(actor: Actor, world: World) =
         world.room(actor.room).exits.map { Action.Move(it.to) }
 
-    override fun check(actor: Actor, world: World, action: Action.Move): FailReason? {
+    override fun check(actor: Actor, world: World, action: Action.Move, rules: Rules): FailReason? {
         val exit = world.room(actor.room).exits.firstOrNull { it.to == action.to } ?: return FailReason.NOT_ADJACENT
         // TODO the original's creature goes through a grille faster than it walks (50 ticks vs 80);
         //  ours takes its normal move time. Crew take the same either way.

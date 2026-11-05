@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.action
 import org.tadams.nostromo.core.event.FailReason
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.TickScope
 
 /**
@@ -20,8 +21,8 @@ internal interface ActionDef<A : Action> {
     /** Every specific action of this type [actor] could attempt from where they are, valid or not. */
     fun candidates(actor: Actor, world: World): List<A>
 
-    /** Why [actor] can't do [action] right now, or null if they can. Checked when it's offered, starts and lands. */
-    fun check(actor: Actor, world: World, action: A): FailReason?
+    /** Why [actor] can't do [action] right now under [rules], or null if they can. Checked when it's offered, starts and lands. */
+    fun check(actor: Actor, world: World, action: A, rules: Rules): FailReason?
 
     /** Applies [action]'s effect. Called only after [check] passes again at completion. */
     fun complete(actor: Actor, world: World, action: A, scope: TickScope)
@@ -41,7 +42,8 @@ internal object ActionDefs {
         require(all.map { it.type }.sorted() == ActionType.entries.sorted()) { "Every ActionType needs exactly one ActionDef" }
     }
 
-    fun check(actor: Actor, world: World, action: Action): FailReason? = defFor(action).check(actor, world, action)
+    fun check(actor: Actor, world: World, action: Action, rules: Rules): FailReason? =
+        defFor(action).check(actor, world, action, rules)
 
     fun complete(actor: Actor, world: World, action: Action, scope: TickScope) =
         defFor(action).complete(actor, world, action, scope)

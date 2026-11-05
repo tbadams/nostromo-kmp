@@ -102,6 +102,7 @@ class EventText(scenario: Scenario) {
         FailReason.NOT_HOLDING -> "they don't have it"
         FailReason.TOO_SCARED -> "too scared"
         FailReason.ROOM_FULL -> "there's no room"
+        FailReason.FRIENDLY_FIRE -> "they won't attack crew"
         FailReason.GRILLE_IN_PLACE -> "the grille is in place"
         FailReason.NO_GRILLE -> "there's no grille here"
         FailReason.GRILLE_ALREADY_REMOVED -> "the grille is already off"

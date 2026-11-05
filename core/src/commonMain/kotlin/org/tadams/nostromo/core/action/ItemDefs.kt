@@ -5,6 +5,7 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.TickScope
 
 /*
@@ -19,7 +20,7 @@ internal object GetDef : ActionDef<Action.Get> {
 
     override fun candidates(actor: Actor, world: World) = world.itemsIn(actor.room).map { Action.Get(it.id) }
 
-    override fun check(actor: Actor, world: World, action: Action.Get): FailReason? = when {
+    override fun check(actor: Actor, world: World, action: Action.Get, rules: Rules): FailReason? = when {
         world.item(action.item).room != actor.room -> FailReason.ITEM_NOT_HERE
         actor.inUse != null && actor.carried != null -> FailReason.HANDS_FULL
         else -> null
@@ -39,7 +40,7 @@ internal object DropDef : ActionDef<Action.Drop> {
 
     override fun candidates(actor: Actor, world: World) = listOfNotNull(actor.inUse, actor.carried).map { Action.Drop(it) }
 
-    override fun check(actor: Actor, world: World, action: Action.Drop): FailReason? =
+    override fun check(actor: Actor, world: World, action: Action.Drop, rules: Rules): FailReason? =
         if (action.item != actor.inUse && action.item != actor.carried) FailReason.NOT_HOLDING else null
 
     override fun complete(actor: Actor, world: World, action: Action.Drop, scope: TickScope) {
@@ -56,7 +57,7 @@ internal object SwapDef : ActionDef<Action.Swap> {
 
     override fun candidates(actor: Actor, world: World) = listOfNotNull(actor.carried).map { Action.Swap(it) }
 
-    override fun check(actor: Actor, world: World, action: Action.Swap): FailReason? =
+    override fun check(actor: Actor, world: World, action: Action.Swap, rules: Rules): FailReason? =
         if (action.item != actor.carried) FailReason.NOT_HOLDING else null
 
     override fun complete(actor: Actor, world: World, action: Action.Swap, scope: TickScope) {

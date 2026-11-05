@@ -5,6 +5,7 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.TickScope
 
@@ -21,7 +22,7 @@ internal object ProwlDef : ActionDef<Action.Prowl> {
 
     override fun candidates(actor: Actor, world: World) = listOf(Action.Prowl)
 
-    override fun check(actor: Actor, world: World, action: Action.Prowl): FailReason? = null
+    override fun check(actor: Actor, world: World, action: Action.Prowl, rules: Rules): FailReason? = null
 
     override fun complete(actor: Actor, world: World, action: Action.Prowl, scope: TickScope) {
         val room = world.room(actor.room)

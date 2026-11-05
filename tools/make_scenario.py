@@ -53,7 +53,7 @@ CREW = [
     ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4, 7.4),
     ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9),
     ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3),
-    ("Bannon",    "Ash",     "mess",           4, 0.5, 4, 7.4),
+    ("Hill",      "Ash",     "mess",           4, 0.5, 4, 7.4),
     ("Melkonis",  "Lambert", "mess",           5, 0.2, 4, 13.3),
     ("Hunter",    "Parker",  "mess",           5, 0.7, 4, 5.9),
     ("Faust",     "Brett",   "airlock-1",      4, 0.4, 3, 5.9),

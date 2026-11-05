@@ -27,7 +27,7 @@ class CombatTest {
      * moves 5 s. Crew need to pick up a weapon ([Get], one tick) to do any damage.
      */
     private fun withCreature(creatureHealth: Int = 3, creatureBrain: String? = null) = corridor(
-        Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0, ActionType.ATTACK to 1.0)),
+        Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0, ActionType.ATTACK to 1.0), friendlyFire = true),
     ).withWeapons().let { it.copy(actors = it.actors + ActorDef(creature, "Creature", ActorKind.CREATURE, C, creatureBrain, creatureHealth)) }
 
     /** Always rolls 0: the first victim, the first exit. */
@@ -108,6 +108,28 @@ class CombatTest {
         assertEquals(2 * 4 + 2 * 4, result.rating.total, "2 × health of each survivor")
         assertEquals(result, events.filterIsInstance<GameEvent.GameOver>().single().result)
         assertTrue(sim.tick().isEmpty(), "nothing happens after the game ends")
+    }
+
+    @Test
+    fun crewCantAttackEachOtherByDefault() {
+        val noFriendlyFire = withCreature().let { it.copy(rules = it.rules.copy(friendlyFire = false)) }
+        val sim = Simulation(noFriendlyFire, FirstChoice)
+        assertTrue(sim.availableActions(ROBY).none { it.action == Attack(HUNTER) }, "not offered")
+
+        sim.submit(Order(ROBY, Attack(HUNTER)))
+        assertEquals(FailReason.FRIENDLY_FIRE, sim.tick().filterIsInstance<GameEvent.ActionFailed>().single().reason)
+    }
+
+    @Test
+    fun crewCanStillAttackTheCreatureWithoutFriendlyFire() {
+        val noFriendlyFire = withCreature().let { s ->
+            s.copy(
+                rules = s.rules.copy(friendlyFire = false),
+                actors = s.actors.map { if (it.id == ROBY) it.copy(room = C) else it },
+            )
+        }
+        val sim = Simulation(noFriendlyFire, FirstChoice)
+        assertEquals(listOf(Attack(creature)), sim.availableActions(ROBY).map { it.action }.filterIsInstance<Attack>())
     }
 
     @Test

@@ -940,8 +940,8 @@
       }
     },
     {
-      "id": "bannon",
-      "name": "Bannon",
+      "id": "hill",
+      "name": "Hill",
       "kind": "crew",
       "room": "mess",
       "health": 4,

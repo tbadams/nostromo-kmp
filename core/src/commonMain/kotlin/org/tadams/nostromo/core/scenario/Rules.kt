@@ -21,6 +21,8 @@ data class Rules(
      * Crew do only what their in-use item does ([ItemTypeDef.damage]); bare-handed, nothing.
      */
     val attackDamage: Int = 1,
+    /** Whether crew can attack each other. Original: no; crew could only attack the creature (and the revealed android). */
+    val friendlyFire: Boolean = false,
     /** Room damage, in percent, each time the creature prowls in a room. Original: 5. */
     val prowlDamagePercent: Int = 5,
     /**

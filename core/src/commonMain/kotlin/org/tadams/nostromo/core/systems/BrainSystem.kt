@@ -15,7 +15,7 @@ internal object BrainSystem {
         for (actor in world.actors.values) {
             val brainId = actor.brain ?: continue
             if (actor.isDown || actor.current != null || actor.queue.isNotEmpty()) continue
-            val options = Options.valid(actor, world)
+            val options = Options.valid(actor, world, scope.rules)
             if (options.isEmpty()) continue
             Brains.get(brainId).decide(actor, options, world, scope)?.let(actor.queue::addLast)
         }

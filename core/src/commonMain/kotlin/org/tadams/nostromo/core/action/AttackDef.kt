@@ -12,15 +12,20 @@ import org.tadams.nostromo.core.TickScope
 internal object AttackDef : ActionDef<Action.Attack> {
     override val type = ActionType.ATTACK
 
-    /** Anyone else here who is still up. Whether an actor *wants* to hit them is the chooser's business. */
+    /**
+     * Anyone else here who is still up, except fellow crew unless [Rules.friendlyFire] is on (checked
+     * in [check], so it applies to orders too). Whether an actor *wants* to hit them is the chooser's business.
+     */
     override fun candidates(actor: Actor, world: World) =
         world.occupants(actor.room).filter { it.id != actor.id && !it.isDown }.map { Action.Attack(it.id) }
 
-    override fun check(actor: Actor, world: World, action: Action.Attack): FailReason? {
+    override fun check(actor: Actor, world: World, action: Action.Attack, rules: Rules): FailReason? {
         val target = world.actors.getValue(action.target)
         return when {
             target.isDown -> FailReason.TARGET_DOWN
             target.room != actor.room -> FailReason.TARGET_NOT_HERE
+            // TODO the android: crew may attack it once revealed, though it's crew (build step 4).
+            actor.isCrew && target.isCrew && !rules.friendlyFire -> FailReason.FRIENDLY_FIRE
             else -> null
         }
     }

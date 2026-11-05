@@ -19,8 +19,11 @@ val C = RoomId("c")
 val ROBY = ActorId("roby")
 val HUNTER = ActorId("hunter")
 
-/** Corridor of three rooms, a - b - c. Moves take exactly 5 s (50 ticks) for Roby; Hunter is 1 s slower. */
-fun corridor(rules: Rules = Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0))) = Scenario(
+/**
+ * Corridor of three rooms, a - b - c. Moves take exactly 5 s (50 ticks) for Roby; Hunter is 1 s slower.
+ * Friendly fire is on by default here: crew hitting each other is the simplest way to test damage.
+ */
+fun corridor(rules: Rules = Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0), friendlyFire = true)) = Scenario(
     id = "test",
     name = "Test corridor",
     rooms = listOf(RoomDef(A, "Alpha"), RoomDef(B, "Bravo"), RoomDef(C, "Charlie")),

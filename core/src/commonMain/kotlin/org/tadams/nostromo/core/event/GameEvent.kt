@@ -194,6 +194,9 @@ enum class FailReason {
     /** The grille here is already off. */
     GRILLE_ALREADY_REMOVED,
 
+    /** Crew can't attack each other ([org.tadams.nostromo.core.scenario.Rules.friendlyFire] is off). */
+    FRIENDLY_FIRE,
+
     /** The destination already holds as many crew as it can (bodies included). */
     ROOM_FULL,
 

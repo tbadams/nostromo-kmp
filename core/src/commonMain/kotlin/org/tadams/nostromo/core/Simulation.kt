@@ -81,6 +81,6 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     fun availableActions(actorId: ActorId): List<ActionOption> {
         val actor = world.actors[actorId] ?: return emptyList()
         if (result != null) return emptyList()
-        return Options.valid(actor, world).map { ActionOption(text.option(it), it) }
+        return Options.valid(actor, world, scenario.rules).map { ActionOption(text.option(it), it) }
     }
 }
