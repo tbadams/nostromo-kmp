@@ -234,7 +234,7 @@ class ThreatsTest {
 
     // ---- The cat
 
-    private fun withCat(brain: String? = null) = scenario(creatureRoom = C, extra = listOf(ActorDef(cat, "Dan", ActorKind.ANIMAL, A, brain = brain, health = 1)))
+    private fun withCat(brain: String? = null) = scenario(creatureRoom = C, extra = listOf(ActorDef(cat, "Spot", ActorKind.ANIMAL, A, brain = brain, health = 1)))
 
     @Test
     fun catchingNeedsABoxOrNet() {

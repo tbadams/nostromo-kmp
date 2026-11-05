@@ -222,6 +222,7 @@ Worth doing, but not needed for the hack.
   - Undecided: whether to drop the "is attacking" opening line for crew fights, so each swing is told once; and whether the revealed android's hits count as crew (it's crew by id; telling them apart needs a loyal-crew flag on `GameEvent.AttackHit`).
 - TODO **Typewriter effect** for the end-of-game report and new log lines: text appears a character at a time, as on a terminal.
 - TODO **Centre the end-of-game report text** (`EndScreen` in `game/GameScreen.kt`); today it's left-aligned.
+- TODO **Spacing the cat loses the game, immediately.** Today a cat blown out of an airlock (loose, or caught in an item inside) is just gone, and since launch only waits for animals still in play, it's a shortcut past catching it. Make it a new `Ending` in `EndSystem`, with its own ending text and a rating of 0.
 - TODO **Android and mobile web support.** The screen is laid out for a wide desktop window (fixed 400dp log, 240dp action bar) and keyboard shortcuts. Phones need a narrow layout and touch-sized targets.
 - "Jumpscare" screen when alien present, like in original
 

@@ -1023,7 +1023,7 @@
     },
     {
       "id": "cat",
-      "name": "Dan",
+      "name": "Spot",
       "kind": "animal",
       "room": "recreation",
       "brain": "cat",

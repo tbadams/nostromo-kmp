@@ -200,7 +200,7 @@ class ShipTest {
 
     @Test
     fun launchNeedsEveryoneAboardIncludingTheCat() {
-        val withCat = scenario(creatureRoom = A, extra = listOf(ActorDef(cat, "Dan", ActorKind.ANIMAL, B, health = 1)))
+        val withCat = scenario(creatureRoom = A, extra = listOf(ActorDef(cat, "Spot", ActorKind.ANIMAL, B, health = 1)))
         val sim = Simulation(withCat, Fixed(15))
         sim.submit(Order(ROBY, listOf(Move(B), Move(C), Action.Launch)))
         val events = sim.runTicks(110)

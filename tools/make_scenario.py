@@ -111,7 +111,7 @@ CREATURE = {
 # The cat: moves every 255 ticks (18.9 s), never into ducts. The original started him in a random
 # room 0-15; ours starts in the Recreation Area.
 CAT = {
-    "id": "cat", "name": "Dan", "kind": "animal", "room": "recreation", "brain": "cat", "health": 1,
+    "id": "cat", "name": "Spot", "kind": "animal", "room": "recreation", "brain": "cat", "health": 1,
     "actionSeconds": {"move": 18.9},
 }
 
