@@ -40,14 +40,10 @@ import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.DimGreen
 import org.tadams.nostromo.ui.Green
 
-/** How faint a location nobody can see is drawn, and everything about it. */
-private const val UNSEEN_ALPHA = 0.35f
-
 /**
  * The ship as a schematic: boxes for rooms, lines for doors and ladders, a small marker beside each
  * room for its duct segment, laid out by [layoutMap] (docs/proto-map.md). Shows the same things as
- * the text list ([MapView]); places no crew member who answers can see are dimmed, except where the
- * selected crew member can move. Tapping one of those (a light green room or duct) orders the move,
+ * the text list ([MapView]), in the same colours. Tapping one of those (a light green room or duct) orders the move,
  * the same as its button in the action bar.
  */
 @Composable
@@ -76,8 +72,6 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
         },
     ) {
         val geometry = Geometry(layout, size, labelHeight = 16.dp.toPx())
-        // Where the selected crew member can move is never dimmed, so the light green stays easy to see.
-        fun alpha(id: RoomId) = if (id in view.seenRooms || id in view.destinations) 1f else UNSEEN_ALPHA
         fun visible(id: RoomId) = rooms[id]?.let(view::shown) == true
         val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))
         val thin = 1.dp.toPx()
@@ -87,21 +81,20 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
             drawLabel(measurer, (band.deck ?: "?").uppercase(), Offset(0f, geometry.bandTop(index)), Amber, bold = true)
         }
 
-        // Links first, so the boxes sit on top of them. A line is dimmed only if both its ends are.
+        // Links first, so the boxes sit on top of them.
         for (link in ui.scenario.links) {
             if (!visible(link.from) || !visible(link.to)) continue
             val a = geometry.centre(link.from) ?: continue
             val b = geometry.centre(link.to) ?: continue
-            val lineAlpha = maxOf(alpha(link.from), alpha(link.to))
             when (link.kind) {
-                LinkKind.DOOR -> drawLine(Green.copy(alpha = 0.6f * lineAlpha), a, b, thin)
-                LinkKind.LADDER -> drawLine(DimGreen.copy(alpha = lineAlpha), a, b, thin * 2)
-                LinkKind.DUCT -> drawLine(DimGreen.copy(alpha = lineAlpha), a, b, thin, pathEffect = dash)
+                LinkKind.DOOR -> drawLine(Green.copy(alpha = 0.6f), a, b, thin)
+                LinkKind.LADDER -> drawLine(DimGreen, a, b, thin * 2)
+                LinkKind.DUCT -> drawLine(DimGreen, a, b, thin, pathEffect = dash)
                 LinkKind.GRILLE -> {
                     // From the room box's corner to its duct marker: solid once the grille is off.
                     val room = if (link.from in layout.ducts) link.to else link.from
                     val open = rooms[room]?.grilleRemoved == true
-                    drawLine(DimGreen.copy(alpha = lineAlpha), a, b, thin, pathEffect = if (open) null else dash)
+                    drawLine(DimGreen, a, b, thin, pathEffect = if (open) null else dash)
                 }
             }
         }
@@ -109,17 +102,17 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
         // Rooms (and any duct with no room of its own) as boxes.
         for ((id, _) in layout.rooms) {
             val room = rooms[id]?.takeIf(view::shown) ?: continue
-            drawRoom(room, geometry, view, measurer, alpha(id))
+            drawRoom(room, geometry, view, measurer)
         }
 
         // Duct segments as small markers, with whoever is visibly inside.
         for ((id, _) in layout.ducts) {
             val duct = rooms[id]?.takeIf(view::shown) ?: continue
             val centre = geometry.centre(id) ?: continue
-            val colour = view.colour(duct).copy(alpha = alpha(id))
+            val colour = view.colour(duct)
             val half = geometry.ductSize / 2
             val topLeft = centre - Offset(half, half)
-            drawRect(colour.copy(alpha = colour.alpha * 0.3f), topLeft, Size(geometry.ductSize, geometry.ductSize))
+            drawRect(colour.copy(alpha = 0.3f), topLeft, Size(geometry.ductSize, geometry.ductSize))
             drawRect(colour, topLeft, Size(geometry.ductSize, geometry.ductSize), style = Stroke(thin))
             val names = view.names(duct)
             if (names.isNotEmpty()) drawLabel(measurer, names, centre + Offset(half + 2.dp.toPx(), -half), colour)
@@ -128,14 +121,14 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier:
 }
 
 /** A room box: outline and faded fill, its name, then any alarms and who's visibly there. */
-private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapView, measurer: TextMeasurer, alpha: Float) {
+private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapView, measurer: TextMeasurer) {
     val centre = geometry.centre(room.id) ?: return
-    val colour = view.colour(room).copy(alpha = alpha)
+    val colour = view.colour(room)
     val topLeft = centre - Offset(geometry.boxSize.width / 2, geometry.boxSize.height / 2)
     val selected = room.id == view.selectedRoom
     // An opaque base under the faded fill, so lines stop at the box's edge rather than showing through it.
     drawRect(Background, topLeft, geometry.boxSize)
-    drawRect(colour.copy(alpha = 0.12f * alpha), topLeft, geometry.boxSize)
+    drawRect(colour.copy(alpha = 0.12f), topLeft, geometry.boxSize)
     drawRect(colour, topLeft, geometry.boxSize, style = Stroke((if (selected) 2 else 1).dp.toPx()))
 
     val inset = 3.dp.toPx()
@@ -147,7 +140,7 @@ private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapVie
     val names = view.names(room)
     if (alarms.isEmpty() && names.isEmpty()) return
     val second = buildAnnotatedString {
-        if (alarms.isNotEmpty()) withStyle(SpanStyle(color = Amber.copy(alpha = alpha), fontWeight = FontWeight.Bold)) { append("$alarms ") }
+        if (alarms.isNotEmpty()) withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) { append("$alarms ") }
         append(names)
     }
     val text = measurer.measure(second, labelStyle(colour), overflow = TextOverflow.Ellipsis, maxLines = 1,
