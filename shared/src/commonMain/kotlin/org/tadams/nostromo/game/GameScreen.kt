@@ -202,7 +202,8 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
             }
         }
         // Where they are: only what they can see from there, so the map doesn't give away changes nobody saw.
-        if (actor != null && !actor.isDown) {
+        // Nothing for crew who don't answer (down, or the revealed android): their whereabouts are unknown.
+        if (actor != null && condition(actor, ui) == Condition.UP) {
             val room = ui.game.room(actor.room)
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 MonoText(room.name, Green)
@@ -213,7 +214,7 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
             }
         }
         // TODO temporary: the selected crew member's own stats, while tuning. Remove or move to the stats screen.
-        val def = actor?.takeUnless { it.isDown }?.let { a -> ui.scenario.actors.firstOrNull { it.id == a.id } }
+        val def = actor?.takeIf { condition(it, ui) == Condition.UP }?.let { a -> ui.scenario.actors.firstOrNull { it.id == a.id } }
         if (def != null) {
             val rules = ui.scenario.rules
             val grille = def.actionSeconds[ActionType.REMOVE_GRILLE] ?: rules.baseSeconds(ActionType.REMOVE_GRILLE)
@@ -250,7 +251,8 @@ private fun CrewTabs(ui: GameUiState, onSelect: (ActorId) -> Unit) {
             ) {
                 MonoText("${index + 1} ${actor.name}", colour, bold = selected)
                 MonoText(if (down) condition.label() else "HP ${"■".repeat(actor.health)}", colour)
-                val activity = actor.activity
+                // No progress bar for crew who don't answer: the revealed android is still acting, but that's secret.
+                val activity = actor.activity?.takeUnless { down }
                 if (activity != null) {
                     LinearProgressIndicator(
                         progress = { activity.progress },
@@ -299,13 +301,14 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
 }
 
 /**
- * A text map, one line per location, grouped by deck. Crew are always shown; anything else only
- * where a crew member who is up can see it (or everywhere in debug mode).
+ * A text map, one line per location, grouped by deck. Crew are always shown, and found bodies
+ * where they lie; crew who don't answer (an unfound body, the revealed android) and anything else
+ * only where a crew member who answers can see them (or everywhere in debug mode).
  */
 @Composable
 private fun ShipMap(ui: GameUiState, modifier: Modifier) {
-    // Rooms a crew member who is up is standing in: everything there is visible.
-    val seenRooms = ui.game.actors.filter { it.kind == ActorKind.CREW && !it.isDown }.map { it.room }.toSet()
+    // Rooms a crew member who answers is standing in: everything there is visible. Not the android's own room.
+    val seenRooms = ui.game.actors.filter { it.kind == ActorKind.CREW && it.takesOrders }.map { it.room }.toSet()
     val byDeck = ui.game.rooms.groupBy { it.deck ?: "?" }
     val selectedActor = ui.selected?.let(ui.game::actor)
     val selectedRoom = selectedActor?.room
@@ -313,19 +316,18 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
     val destinations = selectedActor?.takeIf { it.takesOrders }?.let { ui.game.room(it.room).passages.toSet() }.orEmpty()
 
     fun shown(room: RoomState) = room.kind == RoomKind.ROOM || ui.debug || room.id in seenRooms || room.id in destinations
-    fun visibleIn(room: RoomState) = occupants(ui.game, room)
-        .filter { it.kind == ActorKind.CREW || ui.debug || room.id in seenRooms }
+    // Crew are shown wherever they are, unless they've stopped answering (an unfound body, the revealed
+    // android): then only if someone who answers is there to see them.
+    fun visibleIn(room: RoomState) = occupants(ui.game, room).filter {
+        (it.kind == ActorKind.CREW && condition(it, ui) != Condition.NO_RESPONSE) || ui.debug || room.id in seenRooms
+    }
 
     LazyColumn(modifier.border(1.dp, DimGreen).padding(8.dp)) {
         byDeck.forEach { (deck, rooms) ->
             item { MonoText(deck.uppercase(), Amber, bold = true) }
             items(rooms.filter(::shown)) { room ->
                 val names = visibleIn(room).filterNot { it.asleep || it.gone }.joinToString {
-                    when (condition(it, ui)) {
-                        Condition.DOWN -> "${it.name} (down)"
-                        // Not given away by the map: they're wherever they fell, but nobody knows.
-                        else -> it.name
-                    }
+                    if (condition(it, ui) == Condition.DOWN) "${it.name} (down)" else it.name
                 }
                 // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
                 //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
