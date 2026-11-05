@@ -137,8 +137,8 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
 }
 
 /**
- * Status of the selected crew member and their surroundings: health, morale, what they hold and
- * what's lying here; then their location's damage and grille, as the original's bottom line showed.
+ * Status of the selected crew member: health, morale and what they hold; then their location, its
+ * damage and grille, as the original's bottom line showed, and what's lying there.
  */
 @Composable
 private fun BottomBar(ui: GameUiState, modifier: Modifier) {
@@ -147,29 +147,33 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             if (actor != null) {
                 MonoText(actor.name, Amber, bold = true)
-                MonoText("in ${ui.game.room(actor.room).name}", Green)
-                MonoText(if (knownDown(actor, ui)) "DOWN" else "health ${actor.health}", Green)
+                val condition = condition(actor, ui)
+                if (condition != Condition.UP) {
+                    MonoText(condition.label(), Green)
+                    return@Row
+                }
+                MonoText("health ${actor.health}", Green)
                 actor.morale?.let { MonoText("morale ${EventText.morale(it)} ($it)", Green) }
                 val held = listOfNotNull(
                     actor.inUse?.let { "${ui.game.item(it).name} (in use)" },
                     actor.carried?.let { ui.game.item(it).name },
                 )
                 MonoText("holding ${held.joinToString().ifEmpty { "nothing" }}", Green)
-                val here = ui.game.itemsIn(actor.room).map { it.name }
-                if (here.isNotEmpty()) MonoText("here: ${here.joinToString()}", Green)
             }
         }
         // Where they are: only what they can see from there, so the map doesn't give away changes nobody saw.
-        if (actor != null) {
+        if (actor != null && !actor.isDown) {
             val room = ui.game.room(actor.room)
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 MonoText(room.name, Green)
                 if (room.kind == RoomKind.ROOM) MonoText("damage ${room.damagePercent}%", Green)
                 room.grilleRemoved?.let { MonoText(if (it) "grille off" else "grille in place", Green) }
+                val here = ui.game.itemsIn(actor.room).map { it.name }
+                if (here.isNotEmpty()) MonoText("here: ${here.joinToString()}", Green)
             }
         }
         // TODO temporary: the selected crew member's own stats, while tuning. Remove or move to the stats screen.
-        val def = actor?.let { a -> ui.scenario.actors.firstOrNull { it.id == a.id } }
+        val def = actor?.takeUnless { it.isDown }?.let { a -> ui.scenario.actors.firstOrNull { it.id == a.id } }
         if (def != null) {
             val rules = ui.scenario.rules
             val grille = def.actionSeconds[ActionType.REMOVE_GRILLE] ?: rules.baseSeconds(ActionType.REMOVE_GRILLE)
@@ -186,7 +190,8 @@ private fun CrewTabs(ui: GameUiState, onSelect: (ActorId) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         ui.game.actors.filter { it.kind == ActorKind.CREW }.forEachIndexed { index, actor ->
             val selected = actor.id == ui.selected
-            val down = knownDown(actor, ui)
+            val condition = condition(actor, ui)
+            val down = condition != Condition.UP
             val colour = when {
                 down -> DimGreen
                 selected -> Amber
@@ -201,7 +206,7 @@ private fun CrewTabs(ui: GameUiState, onSelect: (ActorId) -> Unit) {
                     .width(110.dp),
             ) {
                 MonoText("${index + 1} ${actor.name}", colour, bold = selected)
-                MonoText(if (down) "DOWN" else "HP ${"■".repeat(actor.health)}", colour)
+                MonoText(if (down) condition.label() else "HP ${"■".repeat(actor.health)}", colour)
                 val activity = actor.activity
                 if (activity != null) {
                     LinearProgressIndicator(
@@ -225,6 +230,11 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
     Column(modifier.border(1.dp, DimGreen).padding(8.dp)) {
         if (actor == null) return@Column
         MonoText(actor.name, Amber, bold = true)
+        val condition = condition(actor, ui)
+        if (condition != Condition.UP) {
+            MonoText(condition.label(), Green)
+            return@Column
+        }
         MonoText(ui.game.room(actor.room).name, Green)
         val activity = actor.activity
         if (activity != null) {
@@ -264,7 +274,14 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
         byDeck.forEach { (deck, rooms) ->
             item { MonoText(deck.uppercase(), Amber, bold = true) }
             items(rooms.filter(::shown)) { room ->
-                val names = visibleIn(room).joinToString { if (knownDown(it, ui)) "${it.name} (down)" else it.name }
+                val names = visibleIn(room).joinToString {
+                    when (condition(it, ui)) {
+                        Condition.UP -> it.name
+                        Condition.DOWN -> "${it.name} (down)"
+                        // Not given away by the map: they're wherever they fell, but nobody knows.
+                        Condition.NO_RESPONSE -> it.name
+                    }
+                }
                 // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
                 //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
                 //  visible because someone is there looks the same as one only debug reveals.
@@ -278,7 +295,8 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
 @Composable
 private fun EventLog(ui: GameUiState, onDebug: (Boolean) -> Unit, modifier: Modifier) {
     val listState = rememberLazyListState()
-    LaunchedEffect(ui.log.size) { if (ui.log.isNotEmpty()) listState.animateScrollToItem(ui.log.lastIndex) }
+    // Follow new entries, except in debug mode, where the flood of hidden lines would make it hard to read back.
+    LaunchedEffect(ui.log.size) { if (ui.log.isNotEmpty() && !ui.debug) listState.animateScrollToItem(ui.log.lastIndex) }
     Column(modifier.border(1.dp, DimGreen).padding(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             MonoText("LOG", Amber, bold = true)
@@ -326,13 +344,21 @@ private fun MonoText(text: String, colour: Color, bold: Boolean = false) {
         style = MaterialTheme.typography.bodySmall)
 }
 
+/** What the player can tell about a crew member's condition. */
+private enum class Condition { UP, NO_RESPONSE, DOWN }
+
 /**
- * Whether the player knows [actor] is down: crew only once someone has found the body (or in debug),
- * matching the narrator, which doesn't report a collapse nobody saw. Until then they look as they did.
- * TODO an unfound crew member still shows their last health and room; consider "no response" instead.
+ * [actor]'s condition as the player knows it. A crew member who is down but whom nobody has found
+ * (and not in debug) shows as [Condition.NO_RESPONSE]: the player knows something's wrong, not what,
+ * matching the narrator, which doesn't report a collapse nobody saw.
  */
-private fun knownDown(actor: ActorState, ui: GameUiState) =
-    actor.isDown && (actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug)
+private fun condition(actor: ActorState, ui: GameUiState) = when {
+    !actor.isDown -> Condition.UP
+    actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug -> Condition.DOWN
+    else -> Condition.NO_RESPONSE
+}
+
+private fun Condition.label() = if (this == Condition.DOWN) "DOWN" else "NO RESPONSE"
 
 private fun occupants(game: GameState, room: RoomState): List<ActorState> = game.actors.filter { it.room == room.id }
 
