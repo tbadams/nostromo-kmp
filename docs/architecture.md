@@ -220,6 +220,9 @@ Worth doing, but not needed for the hack.
 - **Log each crew hit.** Today the narrator folds every fight into "X is attacking Y" plus one "Y is being wounded", so the player never sees their own crew's individual hits. Show each hit by crew ("Roby hits Creature", "…, to no effect"); keep folding the creature's.
   - About 10 lines in `game/Narrator.kt` and a test. The narrator needs to know who's crew: pass it the crew ids from `GameViewModel`.
   - Undecided: whether to drop the "is attacking" opening line for crew fights, so each swing is told once; and whether the revealed android's hits count as crew (it's crew by id; telling them apart needs a loyal-crew flag on `GameEvent.AttackHit`).
+- TODO **Typewriter effect** for the end-of-game report and new log lines: text appears a character at a time, as on a terminal.
+- TODO **Centre the end-of-game report text** (`EndScreen` in `game/GameScreen.kt`); today it's left-aligned.
+- TODO **Android and mobile web support.** The screen is laid out for a wide desktop window (fixed 400dp log, 240dp action bar) and keyboard shortcuts. Phones need a narrow layout and touch-sized targets.
 - "Jumpscare" screen when alien present, like in original
 
 ## Decisions

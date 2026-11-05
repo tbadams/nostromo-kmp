@@ -37,8 +37,9 @@ fun App() {
         val loaded = scenario
         when {
             loaded != null -> {
-                val seed = remember { Random.nextLong() }
-                GameScreen(viewModel { GameViewModel(loaded, seed) })
+                // A new seed is a new game: keying the view model on it gives a fresh one.
+                var seed by remember { mutableStateOf(Random.nextLong()) }
+                GameScreen(viewModel(key = "game-$seed") { GameViewModel(loaded, seed) }, onRestart = { seed = Random.nextLong() })
             }
             else -> Box(Modifier.fillMaxSize().background(Background), contentAlignment = Alignment.Center) {
                 Text(error ?: "Loading…", color = Green)

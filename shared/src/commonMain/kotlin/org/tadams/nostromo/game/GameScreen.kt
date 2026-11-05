@@ -77,9 +77,10 @@ private val Mono = FontFamily.Monospace
  * - bottom: the selected crew member's surroundings (room; morale and damage once they exist)
  *
  * Keys: 1-9 select crew, Tab / Shift+Tab (or [ and ]) cycle, Esc cancels the current order.
+ * [onRestart] starts a new game, from the end-of-game report.
  */
 @Composable
-fun GameScreen(viewModel: GameViewModel) {
+fun GameScreen(viewModel: GameViewModel, onRestart: () -> Unit) {
     val ui by viewModel.state.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -99,7 +100,7 @@ fun GameScreen(viewModel: GameViewModel) {
         Spacer(Modifier.height(8.dp))
         val result = ui.game.result
         if (result != null) {
-            EndScreen(ui, result, viewModel::setDebug, Modifier.weight(1f).fillMaxWidth())
+            EndScreen(ui, result, viewModel::setDebug, onRestart, Modifier.weight(1f).fillMaxWidth())
             return@Column
         }
         Row(Modifier.weight(1f).fillMaxWidth()) {
@@ -158,10 +159,11 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
 
 /**
  * The end-of-game report, replacing the game view: how it ended, who survived, escaped, slept or
- * died, who the android was, and the Competence Rating in parts (docs/mechanics.md §10).
+ * died, who the android was, and the Competence Rating in parts (docs/mechanics.md §10). A button
+ * at the bottom starts a new game.
  */
 @Composable
-private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) -> Unit, modifier: Modifier) {
+private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) -> Unit, onRestart: () -> Unit, modifier: Modifier) {
     fun names(ids: List<ActorId>) = ids.joinToString { ui.game.actor(it).name }.ifEmpty { "none" }
     val asleep = ui.game.actors.filter { it.asleep }.map { it.id }
     Row(modifier) {
@@ -181,6 +183,8 @@ private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) ->
             MonoText("  Damage ${result.rating.damage}", Green)
             MonoText("  Time   ${result.rating.time}", Green)
             MonoText("  Total  ${result.rating.total} / ${Rating.MAX}", Amber, bold = true)
+            Spacer(Modifier.weight(1f))
+            TerminalButton("NEW GAME", onClick = onRestart, colour = Amber)
         }
         Spacer(Modifier.width(8.dp))
         EventLog(ui, onDebug, Modifier.width(400.dp).fillMaxHeight())
