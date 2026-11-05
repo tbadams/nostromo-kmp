@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -81,6 +83,7 @@ fun GameScreen(viewModel: GameViewModel) {
     val ui by viewModel.state.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    var schematic by remember { mutableStateOf(true) }
 
     Column(
         Modifier
@@ -102,7 +105,13 @@ fun GameScreen(viewModel: GameViewModel) {
         Row(Modifier.weight(1f).fillMaxWidth()) {
             EventLog(ui, viewModel::setDebug, Modifier.width(400.dp).fillMaxHeight())
             Spacer(Modifier.width(8.dp))
-            ShipMap(ui, Modifier.weight(1f).fillMaxHeight())
+            // The schematic (docs/proto-map.md) or the text list, switched with the label in the corner.
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                if (schematic) ShipSchematic(ui, Modifier.fillMaxSize()) else ShipMap(ui, Modifier.fillMaxSize())
+                Box(Modifier.align(Alignment.TopEnd).clickable { schematic = !schematic }.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    MonoText(if (schematic) "[LIST]" else "[MAP]", Green)
+                }
+            }
             Spacer(Modifier.width(8.dp))
             ActionBar(ui, viewModel, Modifier.width(240.dp).fillMaxHeight())
         }
@@ -306,52 +315,66 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
 }
 
 /**
- * A text map, one line per location, grouped by deck. Crew are always shown, and found bodies
- * where they lie; crew who don't answer (an unfound body, the revealed android) and anything else
- * only where a crew member who answers can see them (or everywhere in debug mode).
+ * What the map views ([ShipMap], [ShipSchematic]) may show, so the list and the schematic can't
+ * drift apart. Crew are always shown, and found bodies where they lie; crew who don't answer (an
+ * unfound body, the revealed android) and anything else only where a crew member who answers can
+ * see them (or everywhere in debug mode).
  */
-@Composable
-private fun ShipMap(ui: GameUiState, modifier: Modifier) {
-    // Rooms a crew member who answers is standing in: everything there is visible. Not the android's own room.
+internal class MapView(private val ui: GameUiState) {
+    /** Rooms a crew member who answers is standing in: everything there is visible. Not the android's own room. */
     val seenRooms = ui.game.actors.filter { it.kind == ActorKind.CREW && it.takesOrders }.map { it.room }.toSet()
-    val byDeck = ui.game.rooms.groupBy { it.deck ?: "?" }
-    val selectedActor = ui.selected?.let(ui.game::actor)
+    private val selectedActor = ui.selected?.let(ui.game::actor)
     val selectedRoom = selectedActor?.room
-    // Where the selected crew member could walk or crawl next, not counting through a grille.
+
+    /** Where the selected crew member could walk or crawl next, not counting through a grille. */
     val destinations = selectedActor?.takeIf { it.takesOrders }?.let { ui.game.room(it.room).passages.toSet() }.orEmpty()
 
     fun shown(room: RoomState) = room.kind == RoomKind.ROOM || ui.debug || room.id in seenRooms || room.id in destinations
-    // Crew are shown wherever they are, unless they've stopped answering (an unfound body, the revealed
-    // android): then only if someone who answers is there to see them.
+
+    /**
+     * Crew are shown wherever they are, unless they've stopped answering (an unfound body, the revealed
+     * android): then only if someone who answers is there to see them.
+     */
     fun visibleIn(room: RoomState) = occupants(ui.game, room).filter {
         (it.kind == ActorKind.CREW && condition(it, ui) != Condition.NO_RESPONSE) || ui.debug || room.id in seenRooms
     }
 
+    /** The names of who's visibly in [room], awake and aboard. */
+    fun names(room: RoomState) = visibleIn(room).filterNot { it.asleep || it.gone }.joinToString {
+        if (condition(it, ui) == Condition.DOWN) "${it.name} (down)" else it.name
+    }
+
+    // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
+    //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
+    //  visible because someone is there looks the same as one only debug reveals.
+    fun colour(room: RoomState) = when {
+        room.id == selectedRoom -> Amber
+        room.id in destinations -> LightGreen
+        room.kind == RoomKind.DUCT -> DimGreen
+        else -> Green
+    }
+
+    /** Ship-wide alarms, so everyone knows: fire, structural damage, a blown airlock. */
+    fun alarms(room: RoomState) = listOfNotNull(
+        "FIRE".takeIf { room.burning },
+        "STRUCTURAL".takeIf { room.structural },
+        "BLOWN".takeIf { room.blown },
+    ).joinToString(" ")
+}
+
+/** A text map, one line per location, grouped by deck (see [MapView] for what's shown). */
+@Composable
+private fun ShipMap(ui: GameUiState, modifier: Modifier) {
+    val view = MapView(ui)
+    val byDeck = ui.game.rooms.groupBy { it.deck ?: "?" }
     LazyColumn(modifier.border(1.dp, DimGreen).padding(8.dp)) {
         byDeck.forEach { (deck, rooms) ->
             item { MonoText(deck.uppercase(), Amber, bold = true) }
-            items(rooms.filter(::shown)) { room ->
-                val names = visibleIn(room).filterNot { it.asleep || it.gone }.joinToString {
-                    if (condition(it, ui) == Condition.DOWN) "${it.name} (down)" else it.name
-                }
-                // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
-                //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
-                //  visible because someone is there looks the same as one only debug reveals.
-                val colour = when {
-                    room.id == selectedRoom -> Amber
-                    room.id in destinations -> LightGreen
-                    room.kind == RoomKind.DUCT -> DimGreen
-                    else -> Green
-                }
-                val marker = if (room.id in destinations) "> " else "  "
-                // Ship-wide alarms, so everyone knows: fire, structural damage, a blown airlock.
-                val alarms = listOfNotNull(
-                    "FIRE".takeIf { room.burning },
-                    "STRUCTURAL".takeIf { room.structural },
-                    "BLOWN".takeIf { room.blown },
-                ).joinToString(" ")
+            items(rooms.filter(view::shown)) { room ->
+                val marker = if (room.id in view.destinations) "> " else "  "
+                val alarms = view.alarms(room)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MonoText("$marker${room.name.padEnd(22)} $names", colour)
+                    MonoText("$marker${room.name.padEnd(22)} ${view.names(room)}", view.colour(room))
                     if (alarms.isNotEmpty()) MonoText(alarms, Amber, bold = true)
                 }
             }
@@ -424,7 +447,7 @@ private fun MonoText(text: String, colour: Color, bold: Boolean = false) {
 }
 
 /** What the player can tell about a crew member's condition. */
-private enum class Condition { UP, NO_RESPONSE, DOWN, ASLEEP, LOST }
+internal enum class Condition { UP, NO_RESPONSE, DOWN, ASLEEP, LOST }
 
 /**
  * [actor]'s condition as the player knows it. A crew member who is down but whom nobody has found
@@ -432,7 +455,7 @@ private enum class Condition { UP, NO_RESPONSE, DOWN, ASLEEP, LOST }
  * matching the narrator, which doesn't report a collapse nobody saw. A revealed android shows the
  * same way: it has stopped answering, and the player finds out why from what the crew see.
  */
-private fun condition(actor: ActorState, ui: GameUiState) = when {
+internal fun condition(actor: ActorState, ui: GameUiState) = when {
     actor.asleep -> Condition.ASLEEP
     // Blown out of an airlock: everyone knows the airlock was blown, so the loss is no secret.
     actor.gone -> Condition.LOST
@@ -449,7 +472,7 @@ private fun Condition.label() = when (this) {
     Condition.LOST -> "LOST"
 }
 
-private fun occupants(game: GameState, room: RoomState): List<ActorState> = game.actors.filter { it.room == room.id }
+internal fun occupants(game: GameState, room: RoomState): List<ActorState> = game.actors.filter { it.room == room.id }
 
 private fun clock(tick: Long): String {
     val seconds = tick / Time.TICKS_PER_SECOND
