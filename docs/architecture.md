@@ -225,6 +225,11 @@ Worth doing, but not needed for the hack.
 - TODO **Spacing the cat loses the game, immediately.** Today a cat blown out of an airlock (loose, or caught in an item inside) is just gone, and since launch only waits for animals still in play, it's a shortcut past catching it. Make it a new `Ending` in `EndSystem`, with its own ending text and a rating of 0.
 - TODO **Android and mobile web support.** The screen is laid out for a wide desktop window (fixed 400dp log, 240dp action bar) and keyboard shortcuts. Phones need a narrow layout and touch-sized targets.
 - "Jumpscare" screen when alien present, like in original
+- Clicking on non-movable room selects crew in that room
+- Adjacent room color needs to differ from normal color more
+- Crew should refuse to enter airlock room altogether when it is blown, not agree to then end up in c6 again.
+- Sometimes the keyboard keys seem to just stop working
+- Difficulty/a11y options like toggling off 
 
 ## Decisions
 
