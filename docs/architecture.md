@@ -199,7 +199,7 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Differs from the original: oxygen is used per breathing crew member (its 2 × N rate drained fastest with one missing); the destruct runs 7:00 real time (its "5:00" was about 7.4 minutes); the fire-fighting count resets once a fire is out; fire never spreads, as there.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
    - TODO real audio for the door and grille sounds (and the tracker's beep). Today `:core` emits them (`GameEvent.Noise`); only the grille sound reaches the player, as a log line; playing a sound needs a small `expect`/`actual` audio player per platform in `:shared`.
-   - Narrator idea: hide the "starts moving to …" and "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew.
+   - Narrator idea: hide the "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew. (The "starts …" lines are already gone: the narrator logs no action starts except attacks.)
 
 UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
 

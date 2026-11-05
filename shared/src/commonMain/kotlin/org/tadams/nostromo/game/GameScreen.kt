@@ -62,6 +62,8 @@ import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.DimGreen
 import org.tadams.nostromo.ui.Green
 import org.tadams.nostromo.ui.LightGreen
+import org.tadams.nostromo.ui.Purple
+import org.tadams.nostromo.ui.Red
 
 private val Mono = FontFamily.Monospace
 
@@ -294,7 +296,7 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
         //  option.action.type is enough.
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(ui.actions) { option ->
-                TerminalButton(option.label, onClick = { viewModel.order(option.action) })
+                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, colour = actionColour(option.action))
             }
         }
     }
@@ -385,19 +387,27 @@ private fun EventLog(ui: GameUiState, onDebug: (Boolean) -> Unit, modifier: Modi
     }
 }
 
-/** A rectangular button with a green outline and a faded green fill, matching the terminal look. */
+/** A rectangular button with an outline and a faded fill in [colour], matching the terminal look. */
 @Composable
-private fun TerminalButton(label: String, onClick: () -> Unit) {
+private fun TerminalButton(label: String, onClick: () -> Unit, colour: Color = Green) {
     Box(
         Modifier
             .fillMaxWidth()
-            .border(1.dp, Green, RectangleShape)
-            .background(Green.copy(alpha = 0.12f), RectangleShape)
+            .border(1.dp, colour, RectangleShape)
+            .background(colour.copy(alpha = 0.12f), RectangleShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        MonoText(label, Green)
+        MonoText(label, colour)
     }
+}
+
+/** Action bar colour for [action]: red to attack, purple for the ship's controls and the cat, green otherwise. */
+private fun actionColour(action: Action): Color = when (action) {
+    is Action.Attack -> Red
+    is Action.Catch, Action.ArmDestruct, Action.DisarmDestruct, is Action.BlowAirlock, is Action.SealAirlock,
+    Action.Hypersleep, Action.Launch, Action.FightFire -> Purple
+    else -> Green
 }
 
 @Composable

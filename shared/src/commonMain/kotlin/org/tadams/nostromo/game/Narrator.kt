@@ -61,11 +61,12 @@ class Narrator(private val text: EventText) {
     }
 
     private fun tell(event: GameEvent): List<String> = when (event) {
+        // No "X starts …" lines, as in the original: what an action did is told when it lands. The
+        // player ordered it and the crew tab shows its progress. Attacks are the exception: starting
+        // one opens the fight ("X is attacking Y").
         is GameEvent.ActionStarted -> when (val action = event.action) {
             is Action.Attack -> open(event.actor, action.target, wounded = false)
-            // Instant: the ItemTaken / ItemDropped / ItemSwapped a tick later says it all.
-            is Action.Get, is Action.Drop, is Action.Swap, is Action.Catch -> emptyList()
-            else -> listOf(text.describe(event))
+            else -> emptyList()
         }
         is GameEvent.AttackHit -> hit(event)
         is GameEvent.ActionDelayed -> if (event.actor in waiting) emptyList() else listOf(text.describe(event))

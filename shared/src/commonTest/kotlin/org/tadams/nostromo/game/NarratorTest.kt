@@ -78,6 +78,16 @@ class NarratorTest {
     }
 
     @Test
+    fun startingAnythingButAnAttackIsntLogged() {
+        val lines = shown(
+            GameEvent.ActionStarted(0, roby, Action.Move(b), 47, seen(listOf(roby))),
+            GameEvent.ActionStarted(0, roby, Action.RemoveGrille, 133, seen(listOf(roby))),
+            GameEvent.ActionStarted(0, roby, Action.ArmDestruct, 1, seen(listOf(roby))),
+        )
+        assertEquals(emptyList(), lines)
+    }
+
+    @Test
     fun fightAlreadyAtWoundedOpensWithoutASecondLine() {
         val lines = shown(hit(creature, roby, 2), hit(creature, roby, 1))
         assertEquals(listOf("Creature is attacking Roby"), lines)
