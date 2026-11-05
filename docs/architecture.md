@@ -184,10 +184,12 @@ Get a playable vertical slice working as early as possible, then add depth.
 2. **Vertical slice:** the creature wanders and attacks, crew move and attack with one weapon, a win/lose check. A minimal UI in `:shared` (crew tabs, flat action bar, log, a text map) shows the loop working end to end.
 3. **Crew depth:** first the narrator (see "Narrator: from events to the log"), so this step's new events are designed to be narrated; then items and inventory, morale and obedience, room capacity, the panic gate.
    - Done: the narrator; items (one in use, one carried; instant Get, Drop and Swap); weapon damage from the in-use item (unarmed crew do nothing); effective morale (`systems/MoraleSystem.kt`); the obedience gate (`action/ObedienceGate.kt`: below morale 2, no attacking or entering ducts). Grilles: each room's grille to its duct blocks the way until removed (`RemoveGrille`, from either side; per-crew times; the creature tries it 3/16 of the time).
-   - Left: panic at morale 0, base-morale events (ducts, finding bodies), room capacity.
+   - Also done: panic at morale 0 (drop everything and run; in a duct, rip out the grille and climb out); −1/+1 base morale entering/leaving ducts; finding bodies (−1 to all crew, and the UI shows crew as down only once found); room capacity (3 per room, 1 per duct, bodies count; a move into a full place waits and retries). All tuning numbers are in `Rules`.
+   - Differs from the original, on purpose for now: the obedience gate runs when an action starts, not when it lands; bodies are found as soon as someone shares their location, not on the next arrival; a panicking crew member always runs if there's a way out.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
+   - Narrator idea: hide the "starts moving to …" and "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew.
 
 UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
 
@@ -200,6 +202,7 @@ Worth doing, but not needed for the hack.
   - A formatter in `:shared` turns each `GameEvent`, `FailReason` and action into a string resource with arguments.
   - `:core` tests then check event fields, not English wording. A few `:shared` tests check the text.
   - Note: `getString` is `suspend` outside composables, so log text is formatted in the UI layer rather than in the view model's tick loop.
+- **"Centre" → "center".** Use US spelling everywhere: room names ("Command Centre"), ids (`command-centre`), docs, code and comments. Regenerate the scenario with `tools/make_scenario.py`.
 - **Interrupting AI decisions.** Today, as in the original, a brain decides only when its actor is idle and then commits: crew who walk into the creature's room just after it chose to move see it leave. Options, each behind a `Rules` flag so the original's behaviour stays the default:
   - **Interrupt on arrival:** when crew enter the creature's location, cancel its pending move or prowl so its brain decides again that tick. Cheap, since cancelling has no partial effect.
   - **General re-check:** an optional brain hook ("abandon this?") run each tick or on chosen events. More flexible, more machinery.

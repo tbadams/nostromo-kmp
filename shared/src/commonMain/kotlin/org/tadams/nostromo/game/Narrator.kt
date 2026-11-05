@@ -15,7 +15,8 @@ import org.tadams.nostromo.core.model.ActorId
  *
  * Fights: one line when a fight starts, one when the victim becomes wounded, nothing per hit.
  * A fight ends when either side goes down or moves. A collapse is only told if someone other than
- * the victim saw it.
+ * the victim saw it; otherwise the player learns of it when the body is found.
+ * A move that waits for room says so once, not each time it tries again.
  */
 class Narrator(private val text: EventText) {
 
@@ -24,6 +25,9 @@ class Narrator(private val text: EventText) {
     /** Fights already reported, by (attacker, target). */
     private val openFights = mutableMapOf<Pair<ActorId, ActorId>, Stage>()
 
+    /** Crew whose current move is already reported as waiting for room. */
+    private val waiting = mutableSetOf<ActorId>()
+
     /** Log lines for [event], in order. Call once per event, in the order they happened. */
     fun narrate(event: GameEvent): List<LogEntry> {
         val lines = if (isPlayerVisible(event)) tell(event) else emptyList()
@@ -31,6 +35,15 @@ class Narrator(private val text: EventText) {
         when (event) {
             is GameEvent.ActorDown -> closeFights(event.actor)
             is GameEvent.ActorMoved -> closeFights(event.actor)
+            else -> {}
+        }
+        // A wait is over once the move lands, is stopped or fails, or the one waiting goes down.
+        when (event) {
+            is GameEvent.ActionDelayed -> waiting += event.actor
+            is GameEvent.ActorMoved -> waiting -= event.actor
+            is GameEvent.ActionCancelled -> waiting -= event.actor
+            is GameEvent.ActionFailed -> waiting -= event.actor
+            is GameEvent.ActorDown -> waiting -= event.actor
             else -> {}
         }
         return lines.map { LogEntry(event.tick, it, hidden = false) }
@@ -45,6 +58,7 @@ class Narrator(private val text: EventText) {
             else -> listOf(text.describe(event))
         }
         is GameEvent.AttackHit -> hit(event)
+        is GameEvent.ActionDelayed -> if (event.actor in waiting) emptyList() else listOf(text.describe(event))
         else -> listOf(text.describe(event))
     }
 

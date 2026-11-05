@@ -125,6 +125,9 @@ class Actor(
     /** Out of action: collapsed crew, a dead creature. Down actors stay where they fell and do nothing. */
     val isDown get() = health <= 0
 
+    /** For a crew member who is down: whether anyone has found the body yet ([org.tadams.nostromo.core.systems.MoraleSystem]). */
+    var bodyFound: Boolean = false
+
     /** What they're doing now, or null if idle. */
     var current: ScheduledAction? = null
 

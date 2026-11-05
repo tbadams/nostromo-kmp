@@ -52,6 +52,31 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    /** [actor]'s [action] couldn't land yet, for [reason]; it will try again shortly. */
+    data class ActionDelayed(
+        override val tick: Long,
+        val actor: ActorId,
+        val action: Action,
+        val reason: FailReason,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] panicked instead of doing [ignored]: they drop everything and run. */
+    data class Panicked(
+        override val tick: Long,
+        val actor: ActorId,
+        val ignored: Action,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [finder] found [body], a crew member who went down. Every crew member's morale drops. */
+    data class BodyFound(
+        override val tick: Long,
+        val finder: ActorId,
+        val body: ActorId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
     /** [actor] arrived in [to] from [from]. */
     data class ActorMoved(
         override val tick: Long,
@@ -168,6 +193,9 @@ enum class FailReason {
 
     /** The grille here is already off. */
     GRILLE_ALREADY_REMOVED,
+
+    /** The destination already holds as many crew as it can (bodies included). */
+    ROOM_FULL,
 
     /** Morale is too low to obey: crew below the threshold won't attack or go into ducts. */
     TOO_SCARED,

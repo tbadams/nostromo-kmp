@@ -30,7 +30,8 @@ internal object ActionSystem {
             if (current.remainingTicks <= 0) {
                 actor.current = null
                 complete(world, actor, current.action, scope)
-                startNext(world, actor, scope)
+                // A delayed action is rescheduled as current, so only move on if it landed or failed.
+                if (actor.current == null) startNext(world, actor, scope)
             }
         }
     }
@@ -49,31 +50,56 @@ internal object ActionSystem {
      * Starts [actor]'s next queued action, or fails and clears the queue if it isn't possible.
      * Queued actions are only checked here, when they start, and again when they land; nothing
      * re-checks the queue in between.
+     *
+     * Order of checks: capability, then the [ObedienceGate] (a Broken crew member panics whatever
+     * the order, possible or not, as in the original), then the action's own rules.
      */
     private fun startNext(world: World, actor: Actor, scope: TickScope) {
         val next = actor.queue.removeFirstOrNull() ?: return
         // TODO decide whether to also check orders in Simulation.submit(), so the UI gets an immediate
         //  Rejected for impossible ones (not needed while the action bar only offers valid options).
-        val problem = problemWith(world, actor, next) ?: ObedienceGate.refusal(actor, world, next, scope.rules)
-        if (problem != null) {
-            fail(actor, next, problem, scope)
+        if (next.type !in actor.capabilities) {
+            fail(actor, next, FailReason.NOT_CAPABLE, scope)
             return
         }
-        val total = duration(actor, next, scope)
-        actor.current = ScheduledAction(next, total)
-        scope.emit(GameEvent.ActionStarted(scope.tick, actor.id, next, total, actor.selfVisibility()))
+        when (val verdict = ObedienceGate.judge(actor, world, next, scope.rules)) {
+            is ObedienceGate.Verdict.Refuse -> fail(actor, next, verdict.reason, scope)
+            ObedienceGate.Verdict.Panic -> {
+                actor.queue.clear()
+                ObedienceGate.panic(actor, world, next, scope)?.let { begin(world, actor, it, scope) }
+            }
+            ObedienceGate.Verdict.Obey -> begin(world, actor, next, scope)
+        }
+    }
+
+    /** Starts [action] now if its own rules allow it, otherwise fails it. */
+    private fun begin(world: World, actor: Actor, action: Action, scope: TickScope) {
+        val problem = ActionDefs.check(actor, world, action)
+        if (problem != null) {
+            fail(actor, action, problem, scope)
+            return
+        }
+        val total = duration(actor, action, scope)
+        actor.current = ScheduledAction(action, total)
+        scope.emit(GameEvent.ActionStarted(scope.tick, actor.id, action, total, actor.selfVisibility()))
     }
 
     /**
      * Re-checks [action] just before applying it, since the world may have changed while it ran
-     * (target left, room filled, item taken). If it's no longer possible it fails with no effect.
+     * (target left, item taken). If it's no longer possible it fails with no effect. If the
+     * destination is full ([ObedienceGate.crowded]) it waits and tries again instead, keeping the
+     * rest of the queue, as in the original (docs/mechanics.md §2).
      */
     private fun complete(world: World, actor: Actor, action: Action, scope: TickScope) {
-        // TODO decide whether some failed re-checks should wait and retry instead of failing, as the
-        //  original's room-full rule does (mechanics.md §2). Add with room capacity.
         val problem = problemWith(world, actor, action)
         if (problem != null) {
             fail(actor, action, problem, scope)
+            return
+        }
+        val holdUp = ObedienceGate.crowded(actor, world, action, scope.rules)
+        if (holdUp != null) {
+            actor.current = ScheduledAction(action, Time.ticks(scope.rules.crowdedWaitSeconds + actor.speedPenaltySeconds))
+            scope.emit(GameEvent.ActionDelayed(scope.tick, actor.id, action, holdUp, actor.selfVisibility()))
             return
         }
         ActionDefs.complete(actor, world, action, scope)

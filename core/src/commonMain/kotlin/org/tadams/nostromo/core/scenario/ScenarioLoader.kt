@@ -85,6 +85,11 @@ object ScenarioValidator {
         }
         if (scenario.rules.attackDamage <= 0) add("rules.attackDamage must be positive")
         if (scenario.rules.prowlDamagePercent < 0) add("rules.prowlDamagePercent must not be negative")
+        with(scenario.rules) {
+            if (roomCapacity < 1 || ductCapacity < 1) add("rules.roomCapacity and rules.ductCapacity must be at least 1")
+            if (crowdedWaitSeconds <= 0) add("rules.crowdedWaitSeconds must be positive")
+            if (ductMorale < 0 || bodyFoundMorale < 0) add("rules.ductMorale and rules.bodyFoundMorale must not be negative")
+        }
         if (scenario.rules.creatureGrilleOdds !in 0..16) add("rules.creatureGrilleOdds must be 0-16")
         if (scenario.rules.prowlWeight < 0) add("rules.prowlWeight must not be negative")
         for ((type, seconds) in scenario.rules.actionSeconds) {

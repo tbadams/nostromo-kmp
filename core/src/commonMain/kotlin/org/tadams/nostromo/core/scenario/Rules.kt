@@ -38,6 +38,18 @@ data class Rules(
     val companyMorale: Int = 2,
     /** Crew whose effective morale is below this refuse to attack or to go into ducts. Original: 2. */
     val obedienceMorale: Int = 2,
+    /** Crew whose effective morale is at or below this panic when given an order. Original: 0. */
+    val panicMorale: Int = 0,
+    /** Base morale lost entering a duct, and regained leaving one. Original: 1. */
+    val ductMorale: Int = 1,
+    /** Base morale every crew member loses when anyone finds a body. Original: 1. */
+    val bodyFoundMorale: Int = 1,
+    /** Most crew (bodies included) a room can hold; a move into a full one waits. Original: 3. */
+    val roomCapacity: Int = 3,
+    /** Most crew a duct segment can hold. Original: 1. */
+    val ductCapacity: Int = 1,
+    /** How long a move into a full location waits before trying again, plus the speed penalty. Original: 32 ticks. */
+    val crowdedWaitSeconds: Double = 2.4,
 ) {
     /** Base duration of [type], before any per-actor adjustment. */
     fun baseSeconds(type: ActionType): Double = actionSeconds[type] ?: type.defaultSeconds

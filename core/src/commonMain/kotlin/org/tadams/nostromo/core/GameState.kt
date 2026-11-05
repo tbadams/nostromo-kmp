@@ -63,6 +63,7 @@ data class GameState(
                     inUse = actor.inUse,
                     carried = actor.carried,
                     morale = if (actor.isCrew) MoraleSystem.effective(actor, world, rules) else null,
+                    bodyFound = actor.bodyFound,
                 )
             },
             items = world.items.values.map { ItemState(it.id, it.type.name, it.room) },
@@ -101,6 +102,8 @@ data class ActorState(
     val carried: ItemId? = null,
     /** Effective morale (docs/mechanics.md §5); null for non-crew. */
     val morale: Int? = null,
+    /** For crew who are down: whether anyone has found them. Until then the player shouldn't be told. */
+    val bodyFound: Boolean = false,
 ) {
     val isDown get() = health <= 0
 }

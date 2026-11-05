@@ -1,8 +1,11 @@
 package org.tadams.nostromo.core.systems
 
 import org.tadams.nostromo.core.TickScope
+import org.tadams.nostromo.core.event.GameEvent
+import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.scenario.Rules
 
 /**
@@ -17,15 +20,43 @@ internal object MoraleSystem {
     /**
      * Applies this tick's changes to base morale. Runs after [ActionSystem] and [BrainSystem], so it
      * can react to what they emitted in [TickScope.events].
+     * - Crew lose [Rules.ductMorale] entering a duct and regain it leaving one.
+     * - Crew who are up and share a location with an unfound body find it ("X finds Y's body"), and
+     *   every crew member loses [Rules.bodyFoundMorale].
      *
-     * TODO base-morale changes, all on arrival (ActorMoved in scope.events), rest of build step 3:
-     *  - −1 entering a duct, +1 leaving one.
-     *  - Finding a body: crew arriving where an unfound body lies emits a BodyFound event
-     *    ("X finds Y's body") and costs every crew member −1 (floor 0). Needs a "found" flag on down
-     *    actors, which the map's hide-unseen-collapses TODO also needs.
+     * Base morale never goes below 0, so a crew member at 0 who enters and leaves a duct ends up
+     * higher than they started, as in the original.
+     *
+     * Differs from the original: it looked for bodies only when someone arrived somewhere, so a crew
+     * member who saw a collapse found the body only when someone next came or went. Ours finds it
+     * straight away.
      * TODO +1 to each attacker (max 8) for driving the creature off (build step 4, with scaring it off).
      */
     fun run(world: World, scope: TickScope) {
+        for (moved in scope.events.filterIsInstance<GameEvent.ActorMoved>()) {
+            val actor = world.actors.getValue(moved.actor)
+            if (!actor.isCrew) continue
+            val fromDuct = world.room(moved.from).kind == RoomKind.DUCT
+            val toDuct = world.room(moved.to).kind == RoomKind.DUCT
+            if (toDuct && !fromDuct) adjust(actor, -scope.rules.ductMorale)
+            if (fromDuct && !toDuct) adjust(actor, scope.rules.ductMorale)
+        }
+        findBodies(world, scope)
+    }
+
+    private fun findBodies(world: World, scope: TickScope) {
+        val crew = world.actors.values.filter { it.isCrew }
+        for (body in crew.filter { it.isDown && !it.bodyFound }) {
+            val finder = crew.firstOrNull { !it.isDown && it.room == body.room } ?: continue
+            body.bodyFound = true
+            val seenBy = Visibility.Perceived(world.witnesses(listOf(body.room)))
+            scope.emit(GameEvent.BodyFound(scope.tick, finder.id, body.id, seenBy))
+            crew.filterNot { it.isDown }.forEach { adjust(it, -scope.rules.bodyFoundMorale) }
+        }
+    }
+
+    private fun adjust(actor: Actor, by: Int) {
+        actor.morale = (actor.morale + by).coerceAtLeast(0)
     }
 
     /** [actor]'s own morale plus the bonus of the item in use. Never below 0. */

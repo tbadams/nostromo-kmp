@@ -3,17 +3,20 @@ package org.tadams.nostromo.core.event
 import org.tadams.nostromo.core.Ending
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.event.GameEvent.ActionCancelled
+import org.tadams.nostromo.core.event.GameEvent.ActionDelayed
 import org.tadams.nostromo.core.event.GameEvent.ActionFailed
 import org.tadams.nostromo.core.event.GameEvent.ActionStarted
 import org.tadams.nostromo.core.event.GameEvent.ActorDown
 import org.tadams.nostromo.core.event.GameEvent.ActorMoved
 import org.tadams.nostromo.core.event.GameEvent.AttackHit
+import org.tadams.nostromo.core.event.GameEvent.BodyFound
 import org.tadams.nostromo.core.event.GameEvent.DiceRolled
 import org.tadams.nostromo.core.event.GameEvent.GameOver
 import org.tadams.nostromo.core.event.GameEvent.GrilleRemoved
 import org.tadams.nostromo.core.event.GameEvent.ItemDropped
 import org.tadams.nostromo.core.event.GameEvent.ItemSwapped
 import org.tadams.nostromo.core.event.GameEvent.ItemTaken
+import org.tadams.nostromo.core.event.GameEvent.Panicked
 import org.tadams.nostromo.core.event.GameEvent.RoomDamaged
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.model.ItemId
@@ -33,6 +36,9 @@ class EventText(scenario: Scenario) {
         is ActionStarted -> "${name(event.actor)} starts ${doing(event.action)}"
         is ActionCancelled -> "${name(event.actor)} stops ${doing(event.action)}"
         is ActionFailed -> "${name(event.actor)} can't ${doing(event.action)}: ${reason(event.reason)}"
+        is ActionDelayed -> "${name(event.actor)} waits before ${doing(event.action)}: ${reason(event.reason)}"
+        is Panicked -> "${name(event.actor)} panics!"
+        is BodyFound -> "${name(event.finder)} finds ${name(event.body)}'s body"
         is ActorMoved -> "${name(event.actor)} enters ${room(event.to)}"
         is AttackHit -> "${name(event.attacker)} hits ${name(event.target)}" + if (event.damage == 0) ", to no effect" else ""
         is GrilleRemoved -> "${name(event.actor)} removes the grille in ${room(event.room)}"
@@ -95,6 +101,7 @@ class EventText(scenario: Scenario) {
         FailReason.HANDS_FULL -> "their hands are full"
         FailReason.NOT_HOLDING -> "they don't have it"
         FailReason.TOO_SCARED -> "too scared"
+        FailReason.ROOM_FULL -> "there's no room"
         FailReason.GRILLE_IN_PLACE -> "the grille is in place"
         FailReason.NO_GRILLE -> "there's no grille here"
         FailReason.GRILLE_ALREADY_REMOVED -> "the grille is already off"

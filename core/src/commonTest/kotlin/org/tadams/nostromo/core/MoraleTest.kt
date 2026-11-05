@@ -93,7 +93,7 @@ class MoraleTest {
         sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Attack(HUNTER))))
         sim.runTicks(40)
         assertTrue(sim.state().actor(HUNTER).isDown)
-        assertEquals(3 + 1 - 1, sim.morale(ROBY), "spanner bonus, minus the body")
+        assertEquals(3 - 1 + 1 - 1, sim.morale(ROBY), "finding the body costs 1; spanner +1; the body here −1")
     }
 
     @Test
