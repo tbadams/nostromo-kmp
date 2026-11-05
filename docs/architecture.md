@@ -217,6 +217,9 @@ Worth doing, but not needed for the hack.
   - **Interrupt on arrival:** when crew enter the creature's location, cancel its pending move or prowl so its brain decides again that tick. Cheap, since cancelling has no partial effect.
   - **General re-check:** an optional brain hook ("abandon this?") run each tick or on chosen events. More flexible, more machinery.
   - **Victim chosen when the attack lands:** the original picks whom to hit from whoever is present when the attack resolves; ours fixes the target at decision time, so an attack fails if that one target leaves even with others still there.
+- **Log each crew hit.** Today the narrator folds every fight into "X is attacking Y" plus one "Y is being wounded", so the player never sees their own crew's individual hits. Show each hit by crew ("Roby hits Creature", "…, to no effect"); keep folding the creature's.
+  - About 10 lines in `game/Narrator.kt` and a test. The narrator needs to know who's crew: pass it the crew ids from `GameViewModel`.
+  - Undecided: whether to drop the "is attacking" opening line for crew fights, so each swing is told once; and whether the revealed android's hits count as crew (it's crew by id; telling them apart needs a loyal-crew flag on `GameEvent.AttackHit`).
 
 ## Decisions
 
