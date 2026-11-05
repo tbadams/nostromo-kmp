@@ -60,6 +60,7 @@ import org.tadams.nostromo.ui.Amber
 import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.DimGreen
 import org.tadams.nostromo.ui.Green
+import org.tadams.nostromo.ui.LightGreen
 
 private val Mono = FontFamily.Monospace
 
@@ -265,9 +266,12 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
     // Rooms a crew member who is up is standing in: everything there is visible.
     val seenRooms = ui.game.actors.filter { it.kind == ActorKind.CREW && !it.isDown }.map { it.room }.toSet()
     val byDeck = ui.game.rooms.groupBy { it.deck ?: "?" }
-    val selectedRoom = ui.selected?.let(ui.game::actor)?.room
+    val selectedActor = ui.selected?.let(ui.game::actor)
+    val selectedRoom = selectedActor?.room
+    // Where the selected crew member could walk or crawl next, not counting through a grille.
+    val destinations = selectedActor?.takeIf { it.takesOrders }?.let { ui.game.room(it.room).passages.toSet() }.orEmpty()
 
-    fun shown(room: RoomState) = room.kind == RoomKind.ROOM || ui.debug || room.id in seenRooms
+    fun shown(room: RoomState) = room.kind == RoomKind.ROOM || ui.debug || room.id in seenRooms || room.id in destinations
     fun visibleIn(room: RoomState) = occupants(ui.game, room)
         .filter { it.kind == ActorKind.CREW || ui.debug || room.id in seenRooms }
 
@@ -286,8 +290,14 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
                 // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
                 //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
                 //  visible because someone is there looks the same as one only debug reveals.
-                val colour = if (room.id == selectedRoom) Amber else if (room.kind == RoomKind.DUCT) DimGreen else Green
-                MonoText("  ${room.name.padEnd(22)} $names", colour)
+                val colour = when {
+                    room.id == selectedRoom -> Amber
+                    room.id in destinations -> LightGreen
+                    room.kind == RoomKind.DUCT -> DimGreen
+                    else -> Green
+                }
+                val marker = if (room.id in destinations) "> " else "  "
+                MonoText("$marker${room.name.padEnd(22)} $names", colour)
             }
         }
     }
@@ -351,12 +361,13 @@ private enum class Condition { UP, NO_RESPONSE, DOWN }
 /**
  * [actor]'s condition as the player knows it. A crew member who is down but whom nobody has found
  * (and not in debug) shows as [Condition.NO_RESPONSE]: the player knows something's wrong, not what,
- * matching the narrator, which doesn't report a collapse nobody saw.
+ * matching the narrator, which doesn't report a collapse nobody saw. A revealed android shows the
+ * same way: it has stopped answering, and the player finds out why from what the crew see.
  */
 private fun condition(actor: ActorState, ui: GameUiState) = when {
-    !actor.isDown -> Condition.UP
-    actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug -> Condition.DOWN
-    else -> Condition.NO_RESPONSE
+    actor.isDown -> if (actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug) Condition.DOWN else Condition.NO_RESPONSE
+    actor.kind == ActorKind.CREW && !actor.takesOrders -> Condition.NO_RESPONSE
+    else -> Condition.UP
 }
 
 private fun Condition.label() = if (this == Condition.DOWN) "DOWN" else "NO RESPONSE"
@@ -388,4 +399,5 @@ private fun actionText(action: Action, game: GameState) = when (action) {
     is Action.Get -> "picking up the ${game.item(action.item).name}"
     is Action.Drop -> "dropping the ${game.item(action.item).name}"
     is Action.Swap -> "swapping to the ${game.item(action.item).name}"
+    is Action.Catch -> "catching ${game.actor(action.target).name}"
 }

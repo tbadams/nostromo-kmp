@@ -143,6 +143,96 @@ sealed interface GameEvent {
         override val visibility: Visibility,
     ) : GameEvent
 
+    /** [actor] tried to use [item], but it has no charges left. */
+    data class ItemEmpty(
+        override val tick: Long,
+        val actor: ActorId,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [item] is gone for good: used up, or destroyed with everything in a room. */
+    data class ItemDestroyed(
+        override val tick: Long,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [attacker] netted [target] with [item]: it does nothing for a while. */
+    data class Frozen(
+        override val tick: Long,
+        val attacker: ActorId,
+        val target: ActorId,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [creature] was driven off by [attackers]; an [ActorMoved] follows with where it went. */
+    data class CreatureFled(
+        override val tick: Long,
+        val creature: ActorId,
+        val attackers: List<ActorId>,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] caught [animal] in [item]. */
+    data class AnimalCaught(
+        override val tick: Long,
+        val actor: ActorId,
+        val animal: ActorId,
+        val item: ItemId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] tried to catch [animal] and missed; it bolts. */
+    data class AnimalEscaped(
+        override val tick: Long,
+        val actor: ActorId,
+        val animal: ActorId,
+        override val visibility: Visibility,
+    ) : GameEvent
+
+    /** [actor] is the android and has turned on the crew. Hidden: the crew learn it by seeing what it does. */
+    data class AndroidRevealed(
+        override val tick: Long,
+        val actor: ActorId,
+    ) : GameEvent {
+        override val visibility get() = Visibility.Hidden
+    }
+
+    /** At the start, the creature hatched from [host], who is out of play. */
+    data class Hatched(
+        override val tick: Long,
+        val host: ActorId,
+    ) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /**
+     * A sound heard ship-wide (docs/mechanics.md §9): [kind] at [room], made by [actor]. Who made it
+     * is for debug; the crew hear only that it happened.
+     */
+    data class Noise(
+        override val tick: Long,
+        val kind: NoiseKind,
+        val room: RoomId,
+        val actor: ActorId,
+    ) : GameEvent {
+        override val visibility get() = Visibility.Ship
+    }
+
+    /**
+     * [holder]'s detector ([item]: a tracker, or a caught animal) changed reading: [movement] means
+     * something alive is in a neighbouring location. Reported only when it changes.
+     */
+    data class DetectorReading(
+        override val tick: Long,
+        val holder: ActorId,
+        val item: ItemId,
+        val movement: Boolean,
+        override val visibility: Visibility,
+    ) : GameEvent
+
     /** The game is over. Everyone hears about it. */
     data class GameOver(
         override val tick: Long,
@@ -162,8 +252,23 @@ sealed interface GameEvent {
     }
 }
 
+/** Kinds of ship-wide sound. */
+enum class NoiseKind {
+    /** Someone or something entered a room (not a duct). */
+    DOOR,
+
+    /** A grille was removed. */
+    GRILLE,
+}
+
 /** Why an action couldn't start. */
 enum class FailReason {
+    /** Not something that can be attacked (the cat is caught, not hit). */
+    NOT_A_TARGET,
+
+    /** Catching needs an empty catching item (cat box, net) in use. */
+    NEEDS_CATCHER,
+
     /** This actor can never take this type of action (e.g. the cat attacking). */
     NOT_CAPABLE,
 

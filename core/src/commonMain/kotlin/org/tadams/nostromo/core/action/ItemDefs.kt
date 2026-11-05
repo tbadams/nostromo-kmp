@@ -5,6 +5,8 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.ActorKind
+import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.TickScope
 
@@ -48,6 +50,53 @@ internal object DropDef : ActionDef<Action.Drop> {
         val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
         world.drop(actor, action.item)
         scope.emit(GameEvent.ItemDropped(scope.tick, actor.id, action.item, seenBy))
+    }
+}
+
+/**
+ * Trying to catch an animal here (docs/mechanics.md §9). Needs a catching item in use with nothing
+ * in it already. Succeeds on a roll of 0-15 at least the crew member's difficulty, less the item's
+ * bonus; the animal then rides in the item. On a miss it bolts to a neighbouring room at once.
+ */
+internal object CatchDef : ActionDef<Action.Catch> {
+    override val type = ActionType.CATCH
+
+    override fun candidates(actor: Actor, world: World) = world.occupants(actor.room)
+        .filter { it.kind == ActorKind.ANIMAL && !it.isDown && it.caughtIn == null }
+        .map { Action.Catch(it.id) }
+
+    override fun check(actor: Actor, world: World, action: Action.Catch, rules: Rules): FailReason? {
+        val target = world.actors.getValue(action.target)
+        val item = world.inUse(actor)
+        val canCatch = item != null && item.type.catchBonus != null && item.caught == null
+        return when {
+            target.isDown || target.caughtIn != null || target.room != actor.room -> FailReason.TARGET_NOT_HERE
+            !canCatch -> FailReason.NEEDS_CATCHER
+            else -> null
+        }
+    }
+
+    override fun complete(actor: Actor, world: World, action: Action.Catch, scope: TickScope) {
+        val target = world.actors.getValue(action.target)
+        val item = world.inUse(actor) ?: return
+        val needed = actor.catchDifficulty - (item.type.catchBonus ?: 0)
+        val seenBy = Visibility.Perceived(world.witnesses(listOf(actor.room)))
+        if (scope.roll(16, "${actor.name} catches ${target.name} (needs $needed+)") >= needed) {
+            item.caught = target.id
+            target.caughtIn = item.id
+            target.current = null
+            target.queue.clear()
+            scope.emit(GameEvent.AnimalCaught(scope.tick, actor.id, target.id, item.id, seenBy))
+            return
+        }
+        scope.emit(GameEvent.AnimalEscaped(scope.tick, actor.id, target.id, seenBy))
+        val ways = world.room(target.room).exits.filter { it.kind == LinkKind.DOOR || it.kind == LinkKind.LADDER }
+        if (ways.isEmpty()) return
+        val from = target.room
+        target.current = null
+        target.queue.clear()
+        target.room = ways[scope.roll(ways.size, "${target.name} bolts")].to
+        scope.emit(GameEvent.ActorMoved(scope.tick, target.id, from, target.room, Visibility.Perceived(world.witnesses(listOf(from, target.room)))))
     }
 }
 

@@ -51,6 +51,11 @@ sealed interface Action {
     data class Swap(val item: ItemId) : Action {
         override val type get() = ActionType.SWAP
     }
+
+    /** Try to catch the animal [target] here, with a catching item in use (docs/mechanics.md §9). */
+    data class Catch(val target: ActorId) : Action {
+        override val type get() = ActionType.CATCH
+    }
 }
 
 /**
@@ -79,6 +84,9 @@ enum class ActionType(val defaultSeconds: Double) {
 
     /** Instant in the original. */
     @SerialName("swap") SWAP(0.1),
+
+    /** "Get Jones" was an instant menu choice in the original. */
+    @SerialName("catch") CATCH(0.1),
 }
 
 /** Player input. Applied at the start of the next tick. */

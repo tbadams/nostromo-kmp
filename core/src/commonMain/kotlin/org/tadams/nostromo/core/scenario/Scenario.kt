@@ -25,13 +25,13 @@ data class Scenario(
     /** Every item on the ship, and where it starts. */
     val items: List<ItemDef> = emptyList(),
     val rules: Rules = Rules(),
+    /** Hidden roles handed out at the start: the android and the creature's host. Default: neither. */
+    val roles: Roles = Roles(),
 )
 
 /**
- * A kind of item, e.g. "laser". Only an item *in use* counts, as a weapon and for morale
- * (docs/mechanics.md §4, §5, §7).
- * TODO charges (laser 8, extinguisher 3, harpoon 1, tracker breaks) and special effects (room
- *  damage, the harpoon killing the room, the net freezing, scaring the creature off): build step 4.
+ * A kind of item, e.g. "laser". Only an item *in use* counts, as a weapon, for morale, as a
+ * detector or to catch an animal (docs/mechanics.md §4, §5, §7, §9).
  */
 @Serializable
 data class ItemTypeDef(
@@ -41,7 +41,72 @@ data class ItemTypeDef(
     val damage: Int = 0,
     /** Added to the holder's base morale while it's in use. */
     val morale: Int = 0,
+    /** Attacks it has in it; each attack uses one. Null means unlimited. Original: laser 8, extinguisher 3, harpoon 1. */
+    val charges: Int? = null,
+    /** Whether it's destroyed once its charges are used up (the tracker, the net), rather than left empty. */
+    val breaksWhenSpent: Boolean = false,
+    /** Room damage, in percent, each time it's used to attack in a room (not a duct). Original: laser 30, harpoon 75. */
+    val roomDamagePercent: Int = 0,
+    /**
+     * Whether a hit with it can drive the creature off though it does no damage (the extinguisher).
+     * Hits that do damage always can.
+     */
+    val scares: Boolean = false,
+    /** What an attack with it does instead of, or as well as, plain damage. */
+    val effect: ItemEffect? = null,
+    /** Whether it works as a motion detector while in use (the tracker). */
+    val detects: Boolean = false,
+    /**
+     * Whether it can catch an animal while in use, and how much easier it makes that (the cat box 0,
+     * the net 4). Null if it can't.
+     */
+    val catchBonus: Int? = null,
 )
+
+/** A weapon's special effect (docs/mechanics.md §7). */
+@Serializable
+enum class ItemEffect {
+    /** Freezes the target for [Rules.netFreezeSeconds] instead of hurting it (the net). */
+    @SerialName("freeze") FREEZE,
+
+    /**
+     * As well as its damage: every crew member in the location goes down, the attacker included, and
+     * every item there is destroyed (the harpoon).
+     */
+    @SerialName("killRoom") KILL_ROOM,
+}
+
+/** Who gets the hidden roles (docs/mechanics.md §8, docs/brainstorm.md §6). The host is chosen first; the android is never the host. */
+@Serializable
+data class Roles(
+    /** The crew member who is secretly an android, revealed once the creature is hurt enough ([Rules.androidRevealDamage]). */
+    val android: RoleChoice = RoleChoice(),
+    /** The crew member the creature hatched from: out of play from the start, not a body. */
+    val host: RoleChoice = RoleChoice(),
+)
+
+/** How one role is handed out among the crew. */
+@Serializable
+data class RoleChoice(
+    val pick: RolePick = RolePick.NONE,
+    /** For [RolePick.WEIGHTED]: each candidate's weight. Crew not listed can't get the role. */
+    val weights: List<RoleWeight> = emptyList(),
+)
+
+@Serializable
+enum class RolePick {
+    /** Nobody gets the role. */
+    @SerialName("none") NONE,
+
+    /** Any crew member, equally likely. */
+    @SerialName("any") ANY,
+
+    /** One of [RoleChoice.weights], as likely as its weight. */
+    @SerialName("weighted") WEIGHTED,
+}
+
+@Serializable
+data class RoleWeight(val actor: ActorId, val weight: Int)
 
 /** One item, of [type] (an [ItemTypeDef.id]), lying in [room] at the start. */
 @Serializable
@@ -122,9 +187,22 @@ data class ActorDef(
     val capabilities: Set<ActionType>? = null,
     /** Starting base morale (docs/mechanics.md §5). Only crew have morale. Original: 3 or 4. */
     val morale: Int = 3,
+    /**
+     * How hard this crew member finds catching an animal: they need a roll of 0-15 at least this,
+     * less the catching item's [ItemTypeDef.catchBonus]. Original: 13-15 (docs/mechanics.md §2, §9).
+     */
+    val catchDifficulty: Int = 14,
+    /**
+     * Base duration of a move through a grille, if it differs from this actor's other moves. The
+     * speed penalty is still added. Original: the creature 50 ticks against 80 for its other moves.
+     */
+    val grilleMoveSeconds: Double? = null,
 )
 
-/** Broad type of actor. Only [CREW] take orders. */
+/**
+ * Broad type of actor. Only [CREW] take orders. The android is crew with a hidden role
+ * ([Roles.android]), not a kind of its own: it's crew until revealed.
+ */
 @Serializable
 enum class ActorKind(
     /** What this kind of actor can do unless the scenario says otherwise. */
@@ -133,11 +211,9 @@ enum class ActorKind(
     @SerialName("crew") CREW(
         setOf(
             ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE,
-            ActionType.GET, ActionType.DROP, ActionType.SWAP,
+            ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH,
         ),
     ),
     @SerialName("creature") CREATURE(setOf(ActionType.MOVE, ActionType.ATTACK, ActionType.REMOVE_GRILLE, ActionType.PROWL)),
     @SerialName("animal") ANIMAL(setOf(ActionType.MOVE)),
-    // TODO Android?!?
-
 }

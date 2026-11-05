@@ -96,8 +96,9 @@ class CombatTest {
 
     @Test
     fun killingTheCreatureWinsTheGame() {
+        // One laser shot (2 damage) kills it outright, so there's no flee roll to get in the way.
         val sim = Simulation(withCreature(creatureHealth = 2), FirstChoice)
-        sim.submit(Order(ROBY, listOf(Get(SPANNER_1), Move(B), Move(C), Attack(creature), Attack(creature))))
+        sim.submit(Order(ROBY, listOf(Get(LASER_1), Move(B), Move(C), Attack(creature))))
         val events = sim.runTicks(200)
 
         val result = assertNotNull(sim.result)

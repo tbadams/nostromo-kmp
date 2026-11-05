@@ -21,6 +21,8 @@ internal fun interface Brain {
 internal object Brains {
     private val all: Map<String, Brain> = mapOf(
         "wumpus" to Wumpus,
+        "android" to AndroidBrain,
+        "cat" to CatBrain,
     )
 
     val ids: Set<String> get() = all.keys

@@ -47,11 +47,34 @@ class EventText(scenario: Scenario) {
         is ItemSwapped -> "${name(event.actor)} swaps to the ${item(event.item)}"
         is RoomDamaged -> "Something is tearing at ${room(event.room)} (${event.damagePercent}% damaged)"
         is ActorDown -> "${name(event.actor)} is down"
+        is GameEvent.ItemEmpty -> "${name(event.actor)}'s ${item(event.item)} is empty"
+        is GameEvent.ItemDestroyed -> "The ${item(event.item)} is destroyed"
+        is GameEvent.Frozen -> "${name(event.attacker)} nets ${name(event.target)}"
+        is GameEvent.CreatureFled -> "${name(event.creature)} is driven off"
+        is GameEvent.AnimalCaught -> "${name(event.actor)} catches ${name(event.animal)}"
+        is GameEvent.AnimalEscaped -> "${name(event.animal)} slips away from ${name(event.actor)}"
+        is GameEvent.AndroidRevealed -> "${name(event.actor)} is the android, and turns on the crew"
+        is GameEvent.Hatched -> "The creature has hatched from ${name(event.host)}"
+        is GameEvent.Noise -> noise(event)
+        is GameEvent.DetectorReading ->
+            if (event.movement) "${name(event.holder)}'s ${item(event.item)}: movement nearby" else "${name(event.holder)}'s ${item(event.item)}: all clear"
         is GameOver -> when (event.result.ending) {
             Ending.CREATURE_KILLED -> "The creature is dead"
             Ending.CREW_GONE -> "The whole crew is down"
         }
         is DiceRolled -> "Roll for ${event.reason}: ${event.result} (0-${event.sides - 1})"
+    }
+
+    /** Raw line for a sound, naming where and who (debug detail). */
+    private fun noise(event: GameEvent.Noise) = when (event.kind) {
+        NoiseKind.DOOR -> "Door sound: ${name(event.actor)} enters ${room(event.room)}"
+        NoiseKind.GRILLE -> "Grille sound: ${name(event.actor)} removes the grille in ${room(event.room)}"
+    }
+
+    /** Narrator line for a sound the crew hear but can't place. */
+    fun heard(kind: NoiseKind) = when (kind) {
+        NoiseKind.DOOR -> "A door opens somewhere"
+        NoiseKind.GRILLE -> "A grille clangs somewhere"
     }
 
     /** Narrator line when a fight between [attacker] and [target] starts. */
@@ -76,6 +99,7 @@ class EventText(scenario: Scenario) {
         is Action.Get -> "Get ${item(action.item)}"
         is Action.Drop -> "Drop ${item(action.item)}"
         is Action.Swap -> "Swap to ${item(action.item)}"
+        is Action.Catch -> "Catch ${name(action.target)}"
     }
 
     private fun doing(action: Action): String = when (action) {
@@ -86,6 +110,7 @@ class EventText(scenario: Scenario) {
         is Action.Get -> "picking up the ${item(action.item)}"
         is Action.Drop -> "dropping the ${item(action.item)}"
         is Action.Swap -> "swapping to the ${item(action.item)}"
+        is Action.Catch -> "catching ${name(action.target)}"
     }
 
     /** Name of [item]'s type, e.g. "Laser Pistol". */
@@ -106,6 +131,8 @@ class EventText(scenario: Scenario) {
         FailReason.GRILLE_IN_PLACE -> "the grille is in place"
         FailReason.NO_GRILLE -> "there's no grille here"
         FailReason.GRILLE_ALREADY_REMOVED -> "the grille is already off"
+        FailReason.NOT_A_TARGET -> "that can't be attacked"
+        FailReason.NEEDS_CATCHER -> "they need something to catch it in"
     }
 
     private fun name(id: ActorId) = actorNames[id] ?: id.value

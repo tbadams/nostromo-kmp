@@ -17,6 +17,8 @@ import org.tadams.nostromo.core.model.ActorId
  * A fight ends when either side goes down or moves. A collapse is only told if someone other than
  * the victim saw it; otherwise the player learns of it when the body is found.
  * A move that waits for room says so once, not each time it tries again.
+ * Ship-wide sounds are told only when nobody saw what made them ("A door opens somewhere").
+ * The android's reveal is never told: crew learn of it by seeing it attack.
  */
 class Narrator(private val text: EventText) {
 
@@ -28,9 +30,18 @@ class Narrator(private val text: EventText) {
     /** Crew whose current move is already reported as waiting for room. */
     private val waiting = mutableSetOf<ActorId>()
 
+    /** (tick, actor) for moves and grille removals crew saw, so the sound they made isn't told again. */
+    private val witnessedThisTick = mutableSetOf<Pair<Long, ActorId>>()
+
     /** Log lines for [event], in order. Call once per event, in the order they happened. */
     fun narrate(event: GameEvent): List<LogEntry> {
-        val lines = if (isPlayerVisible(event)) tell(event) else emptyList()
+        witnessedThisTick.removeAll { it.first < event.tick }
+        val seen = isPlayerVisible(event)
+        if (seen && (event is GameEvent.ActorMoved || event is GameEvent.GrilleRemoved)) {
+            val actor = if (event is GameEvent.ActorMoved) event.actor else (event as GameEvent.GrilleRemoved).actor
+            witnessedThisTick += event.tick to actor
+        }
+        val lines = if (seen) tell(event) else emptyList()
         // Whether or not anyone saw it, going down or leaving ends their fights.
         when (event) {
             is GameEvent.ActorDown -> closeFights(event.actor)
@@ -54,13 +65,23 @@ class Narrator(private val text: EventText) {
         is GameEvent.ActionStarted -> when (val action = event.action) {
             is Action.Attack -> open(event.actor, action.target, wounded = false)
             // Instant: the ItemTaken / ItemDropped / ItemSwapped a tick later says it all.
-            is Action.Get, is Action.Drop, is Action.Swap -> emptyList()
+            is Action.Get, is Action.Drop, is Action.Swap, is Action.Catch -> emptyList()
             else -> listOf(text.describe(event))
         }
         is GameEvent.AttackHit -> hit(event)
         is GameEvent.ActionDelayed -> if (event.actor in waiting) emptyList() else listOf(text.describe(event))
+        is GameEvent.Noise -> noise(event)
         else -> listOf(text.describe(event))
     }
+
+    /**
+     * A ship-wide sound, told only if no crew member saw what made it: the matching move or grille
+     * removal this tick was already witnessed, so "a door opens somewhere" would be noise.
+     * TODO real audio for the door and grille sounds (build step 6, docs/architecture.md); today
+     *  they're log lines only.
+     */
+    private fun noise(event: GameEvent.Noise): List<String> =
+        if (event.tick to event.actor in witnessedThisTick) emptyList() else listOf(text.heard(event.kind))
 
     private fun hit(event: GameEvent.AttackHit): List<String> {
         val key = event.attacker to event.target

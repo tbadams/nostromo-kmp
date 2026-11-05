@@ -13,7 +13,8 @@ internal object EndSystem {
     /** The result if the game ended this tick, else null. Emits [GameEvent.GameOver] when it does. */
     fun run(world: World, scope: TickScope): GameResult? {
         val actors = world.actors.values
-        val crew = actors.filter { it.isCrew }
+        // A revealed android isn't on the crew's side, so the game doesn't wait on it.
+        val crew = actors.filter { it.isLoyalCrew }
         val creatures = actors.filter { it.kind == ActorKind.CREATURE }
         val creatureKilled = creatures.isNotEmpty() && creatures.all { it.isDown }
         val crewGone = crew.all { it.isDown }
@@ -33,8 +34,9 @@ internal object EndSystem {
             survivors = survivors.map { it.id },
             escaped = emptyList(),
             casualties = crew.filter { it.isDown }.map { it.id },
-            android = null,
-            rating = Rating(crew = survivors.sumOf { 2 * it.health }),
+            android = actors.firstOrNull { it.isAndroid }?.id,
+            // The android, revealed or not, doesn't count towards the crew's rating (docs/mechanics.md §10).
+            rating = Rating(crew = survivors.filterNot { it.isAndroid }.sumOf { 2 * it.health }),
         )
         scope.emit(GameEvent.GameOver(scope.tick, result))
         return result

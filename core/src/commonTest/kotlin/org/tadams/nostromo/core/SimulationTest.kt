@@ -12,6 +12,7 @@ import org.tadams.nostromo.core.action.Command.Cancel
 import org.tadams.nostromo.core.action.Command.Order
 import org.tadams.nostromo.core.event.FailReason
 import org.tadams.nostromo.core.event.GameEvent
+import org.tadams.nostromo.core.event.NoiseKind
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.scenario.Rules
@@ -32,7 +33,8 @@ class SimulationTest {
         val events = sim.tick()
         assertEquals(B, sim.state().actor(ROBY).room)
         assertNull(sim.state().actor(ROBY).activity)
-        assertIs<GameEvent.ActorMoved>(events.single())
+        assertIs<GameEvent.ActorMoved>(events[0])
+        assertEquals(GameEvent.Noise(49, NoiseKind.DOOR, B, ROBY), events.single { it is GameEvent.Noise }, "entering a room makes a door sound")
     }
 
     @Test
@@ -156,7 +158,7 @@ class SimulationTest {
     fun eventTextIsReadable() {
         val sim = sim()
         sim.submit(Order(ROBY, Move(B)))
-        val texts = sim.runTicks(50).map(sim.text::describe)
+        val texts = sim.runTicks(50).filterNot { it is GameEvent.Noise }.map(sim.text::describe)
         assertEquals(listOf("Roby starts moving to Bravo", "Roby enters Bravo"), texts)
     }
 }

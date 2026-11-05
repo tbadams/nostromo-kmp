@@ -45,7 +45,8 @@ data class GameUiState(
 class GameViewModel(private val scenario: Scenario, seed: Long) : ViewModel() {
 
     private val sim = Simulation(scenario, seed)
-    private val crew = scenario.actors.filter { it.kind == ActorKind.CREW }.map { it.id }
+    /** Crew in play, from the world rather than the scenario: the creature's host isn't. */
+    private val crew = sim.state().actors.filter { it.kind == ActorKind.CREW }.map { it.id }
 
     private val narrator = Narrator(sim.text)
 

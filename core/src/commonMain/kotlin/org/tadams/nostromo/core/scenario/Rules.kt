@@ -12,12 +12,17 @@ data class Rules(
     /** Base duration of each action type. Types not listed use [ActionType.defaultSeconds]. */
     val actionSeconds: Map<ActionType, Double> = emptyMap(),
     /**
-     * Action types an actor's speed penalty isn't added to. Original: picking up, dropping and
-     * swapping items were instant for everyone.
+     * Action types an actor's speed and wound penalties aren't added to. Original: picking up,
+     * dropping and swapping items, and grabbing the cat, were instant for everyone.
      */
-    val unslowedActions: Set<ActionType> = setOf(ActionType.GET, ActionType.DROP, ActionType.SWAP),
+    val unslowedActions: Set<ActionType> = setOf(ActionType.GET, ActionType.DROP, ActionType.SWAP, ActionType.CATCH),
     /**
-     * Health lost per attack by a non-crew attacker with no item in use, e.g. the creature. Original: 1.
+     * Extra seconds on a crew member's actions when they're wounded, by health left. Original: +16
+     * ticks at its health 3 and +48 at 2, which is our 2 and 1 (our health is the original's minus 1).
+     */
+    val woundPenaltySeconds: Map<Int, Double> = mapOf(2 to 1.2, 1 to 3.6),
+    /**
+     * Health lost per attack by a non-crew attacker, e.g. the creature or the revealed android. Original: 1.
      * Crew do only what their in-use item does ([ItemTypeDef.damage]); bare-handed, nothing.
      */
     val attackDamage: Int = 1,
@@ -33,6 +38,8 @@ data class Rules(
     val prowlWeight: Int = 1,
     /** Chance in 16 that the creature, finding a grille in place, sets about removing it. Original: 3. */
     val creatureGrilleOdds: Int = 3,
+    /** Chance in 16 that the creature, finding a grille open, goes through it before considering other exits. Original: 6. */
+    val creatureGrilleMoveOdds: Int = 6,
     /**
      * Each other crew member here who is up adds (their base morale − this) to effective morale, so
      * brave company lifts it and frightened company drags it down. Original: 2.
@@ -52,6 +59,27 @@ data class Rules(
     val ductCapacity: Int = 1,
     /** How long a move into a full location waits before trying again, plus the speed penalty. Original: 32 ticks. */
     val crowdedWaitSeconds: Double = 2.4,
+    /**
+     * Driving the creature off (docs/mechanics.md §7). After a hit that doesn't kill it, each crew
+     * member attacking it who is healthy (health above [fleeHealthAbove]) adds 1 if their effective
+     * morale is at least [fleeConfidentMorale], plus the creature's damage ÷ [fleeDamageDivisor].
+     * It flees with that many chances in 16, never on a roll of 15. Original: above 2 of its health
+     * (our 1), 4, 4.
+     */
+    val fleeHealthAbove: Int = 1,
+    val fleeConfidentMorale: Int = 4,
+    val fleeDamageDivisor: Int = 4,
+    /** Base morale each attacker gains for driving the creature off, up to [moraleCap]. Original: 1, max 8. */
+    val fleeMorale: Int = 1,
+    val moraleCap: Int = 8,
+    /** How long the net freezes its target. Original: 255 ticks. */
+    val netFreezeSeconds: Double = 18.9,
+    /** Damage the creature has taken when the android reveals itself. Original: 6. */
+    val androidRevealDamage: Int = 6,
+    /** Effective morale crew gain while a detector in their location reads all clear. Original: 1. */
+    val detectorClearMorale: Int = 1,
+    /** Base morale added by an item in use with a caught animal in it. Original: 1 ("Cat in Box"). */
+    val caughtAnimalMorale: Int = 1,
 ) {
     /** Base duration of [type], before any per-actor adjustment. */
     fun baseSeconds(type: ActionType): Double = actionSeconds[type] ?: type.defaultSeconds

@@ -11,10 +11,8 @@ import org.tadams.nostromo.core.scenario.Rules
 
 /**
  * Removing the grille between a room and its duct, from either side (docs/mechanics.md §3, §6).
- * Once off it stays off; there's no putting it back, as in the original.
- *
- * TODO the grille sound, heard ship-wide whoever removes it (docs/mechanics.md §9; build step 4,
- *  with trackers and sounds). Today only those on either side notice.
+ * Once off it stays off; there's no putting it back, as in the original. Those on either side see
+ * who did it; everyone else hears the grille sound ([org.tadams.nostromo.core.systems.DetectionSystem]).
  */
 internal object RemoveGrilleDef : ActionDef<Action.RemoveGrille> {
     override val type = ActionType.REMOVE_GRILLE

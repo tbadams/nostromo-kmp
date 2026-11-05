@@ -77,7 +77,19 @@ object ScenarioValidator {
         duplicates(scenario.items.map { it.id }).forEach { add("Duplicate item id '$it'") }
         for (type in scenario.itemTypes) {
             if (type.damage < 0) add("Item type '${type.id}' damage must not be negative")
+            if ((type.charges ?: 1) < 1) add("Item type '${type.id}' charges must be at least 1 (or left out for unlimited)")
+            if (type.roomDamagePercent < 0) add("Item type '${type.id}' roomDamagePercent must not be negative")
+            if ((type.catchBonus ?: 0) < 0) add("Item type '${type.id}' catchBonus must not be negative")
         }
+        val crewIds = scenario.actors.filter { it.kind == ActorKind.CREW }.map { it.id }.toSet()
+        for ((role, choice) in listOf("android" to scenario.roles.android, "host" to scenario.roles.host)) {
+            for (weight in choice.weights) {
+                if (weight.actor !in crewIds) add("roles.$role names '${weight.actor}', who isn't crew")
+                if (weight.weight < 0) add("roles.$role weight for '${weight.actor}' must not be negative")
+            }
+            if (choice.pick != RolePick.WEIGHTED && choice.weights.isNotEmpty()) add("roles.$role has weights but pick isn't \"weighted\"")
+        }
+        if (scenario.roles.host.pick != RolePick.NONE && crewIds.size < 2) add("roles.host needs at least two crew, so someone is left")
         val types = scenario.itemTypes.map { it.id }.toSet()
         for (item in scenario.items) {
             if (item.type !in types) add("Item '${item.id}' has unknown type '${item.type}'")
@@ -91,6 +103,9 @@ object ScenarioValidator {
             if (ductMorale < 0 || bodyFoundMorale < 0) add("rules.ductMorale and rules.bodyFoundMorale must not be negative")
         }
         if (scenario.rules.creatureGrilleOdds !in 0..16) add("rules.creatureGrilleOdds must be 0-16")
+        if (scenario.rules.creatureGrilleMoveOdds !in 0..16) add("rules.creatureGrilleMoveOdds must be 0-16")
+        if (scenario.rules.fleeDamageDivisor < 1) add("rules.fleeDamageDivisor must be at least 1")
+        if (scenario.rules.netFreezeSeconds <= 0) add("rules.netFreezeSeconds must be positive")
         if (scenario.rules.prowlWeight < 0) add("rules.prowlWeight must not be negative")
         for ((type, seconds) in scenario.rules.actionSeconds) {
             if (seconds <= 0) add("rules.actionSeconds for $type must be positive")

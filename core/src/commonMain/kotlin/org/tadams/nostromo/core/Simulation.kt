@@ -7,16 +7,20 @@ import org.tadams.nostromo.core.action.Options
 import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.model.ActorId
+import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.rng.Dice
 import org.tadams.nostromo.core.rng.SeededDice
+import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.Scenario
 import org.tadams.nostromo.core.scenario.ScenarioValidator
 import org.tadams.nostromo.core.systems.ActionSystem
 import org.tadams.nostromo.core.systems.BrainSystem
 import org.tadams.nostromo.core.systems.CommandSystem
+import org.tadams.nostromo.core.systems.DetectionSystem
 import org.tadams.nostromo.core.systems.EndSystem
 import org.tadams.nostromo.core.systems.MoraleSystem
+import org.tadams.nostromo.core.systems.RoleSystem
 
 /**
  * The game. Randomness is delegated to the seeded [Dice].
@@ -33,9 +37,15 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
         ScenarioValidator.check(scenario)
     }
 
-    private val world = World.from(scenario)
+    /** Hidden roles, handed out before the first tick. */
+    private val roles = RoleSystem.assign(scenario, dice)
+
+    private val world = World.from(scenario, host = roles.host, android = roles.android)
     // Not thread-safe: written by submit() and drained by tick() with no lock.
     private val pending = mutableListOf<Command>()
+
+    /** Each detector's last reported reading ([DetectionSystem]). */
+    private val readings = mutableMapOf<ItemId, Boolean>()
 
     /** Text for this scenario's events and actions. */
     val text = EventText(scenario)
@@ -48,13 +58,14 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     var result: GameResult? = null
         private set
 
-    /** Queues [command] to apply at the start of the next tick. */
+    /**
+     * Queues [command] to apply at the start of the next tick. Only crew can be given orders. An
+     * order to crew who can't take it (down, or a revealed android) is accepted and quietly ignored,
+     * so the player isn't told who the android is.
+     */
     fun submit(command: Command): CommandResult {
-        require(command.actor in world.actors) { "Unknown actor '${command.actor}'" }
-        // TODO reject orders to actors who can't take them. Today any actor is accepted, so the creature
-        //  or cat could be ordered around. "Takes orders" isn't simply kind == CREW: the android is crew
-        //  until revealed, then behaves like a creature, and dead crew can't act. It likely depends on
-        //  kind plus state (alive, revealed). See the TODO on ActorKind about the android.
+        val actor = requireNotNull(world.actors[command.actor]) { "Unknown actor '${command.actor}'" }
+        if (actor.kind != ActorKind.CREW) return CommandResult.Rejected("${actor.name} doesn't take orders")
         pending += command // Not thread-safe: unguarded write to pending.
         return CommandResult.Accepted
     }
@@ -63,12 +74,16 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     fun tick(): List<GameEvent> {
         if (result != null) return emptyList()
         val scope = TickScope(tick, scenario.rules, dice)
+        if (tick == 0L) roles.host?.let { scope.emit(GameEvent.Hatched(tick, it)) }
         // Not thread-safe: a submit() between this copy and the clear() would be lost.
         CommandSystem.run(world, pending.toList(), scope)
         pending.clear()
         ActionSystem.run(world, scope)
+        world.carryCaught()
+        RoleSystem.run(world, scope)
         BrainSystem.run(world, scope)
         MoraleSystem.run(world, scope)
+        DetectionSystem.run(world, scope, readings)
         result = EndSystem.run(world, scope)
         tick++
         return scope.events
@@ -80,7 +95,7 @@ class Simulation(val scenario: Scenario, private val dice: Dice) {
     /** Everything the actor specified by [actorId] could be ordered to do right now, for the action bar. */
     fun availableActions(actorId: ActorId): List<ActionOption> {
         val actor = world.actors[actorId] ?: return emptyList()
-        if (result != null) return emptyList()
+        if (result != null || !actor.takesOrders) return emptyList()
         return Options.valid(actor, world, scenario.rules).map { ActionOption(text.option(it), it) }
     }
 }

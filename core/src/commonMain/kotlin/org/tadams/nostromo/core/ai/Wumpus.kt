@@ -3,6 +3,7 @@ package org.tadams.nostromo.core.ai
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.TickScope
 
 /**
@@ -13,10 +14,11 @@ import org.tadams.nostromo.core.TickScope
  * Grilles in place block it like anyone else; finding one, it sets about removing it with
  * [org.tadams.nostromo.core.scenario.Rules.creatureGrilleOdds] in 16, as in the original.
  *
+ * Finding the grille open, it goes through with [org.tadams.nostromo.core.scenario.Rules.creatureGrilleMoveOdds]
+ * in 16 before considering other exits, as in the original.
+ *
  * Simplified: no carrying off bodies. The linger odds approximate the original's padded 5-slot exit
  * tables rather than copying them per room.
- * TODO the original's 6/16 chance to go through an open grille before considering other exits;
- *  ours treats the way through as one exit among the rest.
  */
 internal object Wumpus : Brain {
     /** The original's exit tables had 5 slots; unused slots meant "stay". */
@@ -30,6 +32,15 @@ internal object Wumpus : Brain {
             scope.roll(16, "${actor.name} tries the grille") < scope.rules.creatureGrilleOdds
         ) {
             return Action.RemoveGrille
+        }
+
+        val grilleMove = options.filterIsInstance<Action.Move>().firstOrNull { move ->
+            world.room(actor.room).exits.any { it.to == move.to && it.kind == LinkKind.GRILLE }
+        }
+        if (grilleMove != null &&
+            scope.roll(16, "${actor.name} takes the open grille") < scope.rules.creatureGrilleMoveOdds
+        ) {
+            return grilleMove
         }
 
         val moves = options.filterIsInstance<Action.Move>()

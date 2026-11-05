@@ -71,13 +71,14 @@ class Simulation(scenario: Scenario, seed: Long) {
 Each system is a small function over `World` plus a `TickScope` (dice, event sink, rules). The order is set once in `Simulation`, which mirrors the original's main loop (mechanics §11):
 
 1. `CommandSystem`: apply queued commands
-2. `ActionSystem`: count down timers and resolve finished actions, passing them through the obedience and panic gate
-3. `BrainSystem`: AI for the creature, the android, the cat and crew reflexes (actors with an AI decide when they're idle)
-4. `MoraleSystem`: the morale rules (base and effective morale, worked out on demand) and the events that change base morale
-5. `HazardSystem`: room damage, fire and spread, oxygen
-6. `ShipSystem`: destruct clock, airlocks, launch checks
-7. `DetectionSystem`: trackers, sounds, the cat's unease
-8. `EndSystem`: win and lose checks, and scoring
+2. `ActionSystem`: count down timers and resolve finished actions, passing them through the obedience and panic gate (then caught animals move with their holders)
+3. `RoleSystem`: the android's reveal (roles are handed out once, before the first tick)
+4. `BrainSystem`: AI for the creature, the android, the cat and crew reflexes (actors with an AI decide when they're idle)
+5. `MoraleSystem`: the morale rules (base and effective morale, worked out on demand) and the events that change base morale
+6. `HazardSystem`: room damage, fire and spread, oxygen (build step 5)
+7. `ShipSystem`: destruct clock, airlocks, launch checks (build step 5)
+8. `DetectionSystem`: trackers, sounds, the cat's unease
+9. `EndSystem`: win and lose checks, and scoring
 
 Each system is unit-testable on a tiny hand-built world.
 
@@ -147,7 +148,7 @@ Today each event maps to zero or one log line, decided on its own with no memory
 model/      World, Room, Link, Actor, Item, ids (value classes), ShipState
 scenario/   Scenario, Rules, ScenarioLoader, ScenarioValidator, Randomizer
 action/     Command, Action, ActionDef + one per action type, Options, pathfinding
-systems/    the eight systems above
+systems/    the systems above
 ai/         Brain + implementations
 event/      GameEvent, Visibility, EventText
 rng/        Dice
@@ -187,9 +188,14 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Also done: panic at morale 0 (drop everything and run; in a duct, rip out the grille and climb out); −1/+1 base morale entering/leaving ducts; finding bodies (−1 to all crew, and the UI shows crew as down only once found); room capacity (3 per room, 1 per duct, bodies count; a move into a full place waits and retries). All tuning numbers are in `Rules`.
    - Differs from the original, on purpose for now: the obedience gate runs when an action starts, not when it lands; bodies are found as soon as someone shares their location, not on the next arrival; a panicking crew member always runs if there's a way out.
 4. **Threats:** the full combat table, flee rolls, the android and chestburster with any-crew roles, the cat, the tracker and sounds.
-   - Also, carried over from step 3 as code TODOs: item charges and special effects; the tracker's +1 morale; +1 morale for driving the creature off; the grille sound heard ship-wide; the creature's faster grille passage (50 vs 80 ticks) and its 6/16 preference for an open grille; the android's obedience (never attacks the creature, skips the morale check) and crew being allowed to attack it once revealed; the wound penalty on action times.
+   - Done: item charges and effects on `ItemTypeDef` (laser and harpoon room damage, the harpoon killing the room, the net freezing, the tracker and net breaking, the extinguisher scaring); driving the creature off (`AttackDef`), with +1 morale per attacker up to 8; the wound penalty on action times; the creature's faster grille passage (`ActorDef.grilleMoveSeconds`) and its 6/16 preference for an open grille.
+   - Roles (`scenario.roles`, `systems/RoleSystem.kt`): "none", "any" or a weighted list for the android and the host. The host is out of play from the start; the android is crew until the creature has taken 6 damage, then turns (brain `"android"`). Before that it never attacks the creature (the order becomes a move away) and skips the morale check. The reveal is `Hidden`: the UI shows the android as NO RESPONSE, and crew learn the truth by seeing it attack. A revealed android counts for neither morale, witnesses nor the ending.
+   - The cat (brain `"cat"`, `CatchDef`): wanders rooms, never ducts, avoids the creature. Caught with a box or net in use (per-crew difficulty), it rides in the item, works as a detector and gives +1 morale.
+   - Detection and sounds (`systems/DetectionSystem.kt`): door and grille sounds as ship-wide `Noise` events; the narrator logs them only when nobody saw the cause. Detectors (tracker, caught cat) report changes to the holder, and an all-clear gives +1 effective morale.
+   - Differs from the original: the tracker reports each holder's reading, not just the selected crew member's; the cat avoids the creature's room rather than moving again after landing in it; anyone can be the android or the host.
 5. **Ship:** room damage, fire and spread, oxygen, self-destruct, airlocks, launch, endings, Competence Rating.
 6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
+   - TODO real audio for the door and grille sounds (and the tracker's beep). Today they're log lines from the narrator (`GameEvent.Noise`); playing a sound needs a small `expect`/`actual` audio player per platform in `:shared`.
    - Narrator idea: hide the "starts moving to …" and "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew.
 
 UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
@@ -234,5 +240,5 @@ Worth doing, but not needed for the hack.
 
 Tagged with TODOs in the code:
 - **Speed values are in seconds on `Actor`.** That breaks "seconds in data, ticks in the simulation"; convert in `World.from()`.
-- **Nothing restricts who can be ordered** (`Simulation.submit()`). The android is crew until revealed and then acts like a creature, so the actor model probably needs separate allegiance, control and what the actor is.
+- **Allegiance is flags on `Actor`,** not a model of its own: `isAndroid`, `revealed`, `isLoyalCrew` and `takesOrders`. Orders to non-crew are rejected; orders to a revealed android are accepted and ignored, so `submit()` doesn't give the secret away.
 - **`ActionDefs` looks up definitions by type with one unchecked cast.** Moving `check`/`complete` onto the `Action` subtypes was considered and deferred; it's cheapest to do before step 3 adds a batch of actions.

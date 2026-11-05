@@ -48,41 +48,54 @@ SHIP_DECKS = {"upper", "middle", "lower"}
 # its crew collapsed below 2. Speed penalties are its per-character delays (ticks) converted to
 # seconds (÷ 13.5). Start rooms follow the original's long game.
 # Grille removal time is the original's per-character value (ticks ÷ 13.5, docs/mechanics.md §2).
+# Cat-catching difficulty is the original's per-character value (docs/mechanics.md §2).
 CREW = [
-    # name,       original, start room,      health, speed penalty s, base morale, grille removal s
-    ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4, 7.4),
-    ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9),
-    ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3),
-    ("Hill",      "Ash",     "mess",           4, 0.5, 4, 7.4),
-    ("Melkonis",  "Lambert", "mess",           5, 0.2, 4, 13.3),
-    ("Hunter",    "Parker",  "mess",           5, 0.7, 4, 5.9),
-    ("Faust",     "Brett",   "airlock-1",      4, 0.4, 3, 5.9),
+    # name,       original, start room,      health, speed penalty s, base morale, grille removal s, catch
+    ("Standard",  "Dallas",  "command-centre", 5, 0.5, 4, 7.4, 14),
+    ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9, 14),
+    ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3, 13),
+    ("Hill",      "Ash",     "mess",           4, 0.5, 4, 7.4, 13),
+    ("Melkonis",  "Lambert", "mess",           5, 0.2, 4, 13.3, 13),
+    ("Hunter",    "Parker",  "mess",           5, 0.7, 4, 5.9, 15),
+    ("Faust",     "Brett",   "airlock-1",      4, 0.4, 3, 5.9, 14),
 ]
+
+# Hidden roles: anyone can be the android or the creature's host (docs/brainstorm.md §6), rather
+# than the original's fixed lists.
+ROLES = {"android": {"pick": "any"}, "host": {"pick": "any"}}
 
 # Every grille starts in place except this room's (docs/mechanics.md §3).
 OPEN_GRILLES = {"corridor-6"}
 
 # Item types, in the original's item-table order (docs/mechanics.md §7, reference/notes/10_data_map.md §4):
-# id, name, how many, damage to the creature, morale bonus while in use. Charges and special effects
-# (laser and harpoon room damage, the harpoon killing the room, the net freezing) aren't modelled yet.
+# id, name, how many, damage to the creature, morale bonus while in use, then extra fields: charges,
+# special effects, detecting and catching.
 ITEM_TYPES = [
-    ("prod",         "Electric Prod",    3, 1, 1),
-    ("incinerator",  "Incinerator",      3, 1, 2),
-    ("tracker",      "Tracker",          2, 1, 0),
-    ("extinguisher", "Fire Extinguisher", 4, 0, 1),
-    ("harpoon",      "Harpoon Gun",      1, 5, 2),
-    ("laser",        "Laser Pistol",     3, 2, 2),
-    ("net",          "Net",              1, 0, 0),
-    ("cat-box",      "Cat Box",          1, 0, 0),
-    ("spanner",      "Spanner",          2, 1, 1),
+    ("prod",         "Electric Prod",    3, 1, 1, {}),
+    ("incinerator",  "Incinerator",      3, 1, 2, {}),
+    ("tracker",      "Tracker",          2, 1, 0, {"charges": 1, "breaksWhenSpent": True, "detects": True}),
+    ("extinguisher", "Fire Extinguisher", 4, 0, 1, {"charges": 3, "scares": True}),
+    ("harpoon",      "Harpoon Gun",      1, 5, 2, {"charges": 1, "roomDamagePercent": 75, "effect": "killRoom"}),
+    ("laser",        "Laser Pistol",     3, 2, 2, {"charges": 8, "roomDamagePercent": 30}),
+    ("net",          "Net",              1, 0, 0, {"charges": 1, "breaksWhenSpent": True, "effect": "freeze", "catchBonus": 4}),
+    ("cat-box",      "Cat Box",          1, 0, 0, {"catchBonus": 0}),
+    ("spanner",      "Spanner",          2, 1, 1, {}),
 ]
 
-# The original's creature: fixed timers (80 ticks to move, 60 to attack), dies at 15 damage,
-# starts in a duct.
+# The original's creature: fixed timers (80 ticks to move, 50 through a grille, 60 to attack),
+# dies at 15 damage, starts in a duct.
 CREATURE = {
     "id": "creature", "name": "Creature", "kind": "creature", "room": "corridor-4-duct",
     "brain": "wumpus", "health": 15,
     "actionSeconds": {"move": 5.9, "attack": 4.4, "prowl": 5.9, "removeGrille": 3.7},
+    "grilleMoveSeconds": 3.7,
+}
+
+# The cat: moves every 255 ticks (18.9 s), never into ducts. The original started him in a random
+# room 0-15; ours starts in the Recreation Area.
+CAT = {
+    "id": "cat", "name": "Dan", "kind": "animal", "room": "recreation", "brain": "cat", "health": 1,
+    "actionSeconds": {"move": 18.9},
 }
 
 
@@ -146,20 +159,21 @@ def main(out_path):
 
     actors = [{"id": name.lower(), "name": name, "kind": "crew", "room": room, "health": health,
                **({"speedPenaltySeconds": speed} if speed else {}), "morale": morale,
-               "actionSeconds": {"removeGrille": grille}}
-              for name, _original, room, health, speed, morale, grille in CREW]
+               "actionSeconds": {"removeGrille": grille}, "catchDifficulty": catch}
+              for name, _original, room, health, speed, morale, grille, catch in CREW]
     actors.append(CREATURE)
+    actors.append(CAT)
 
-    item_types = [{"id": tid, "name": name, "damage": damage, "morale": morale}
-                  for tid, name, _count, damage, morale in ITEM_TYPES]
+    item_types = [{"id": tid, "name": name, "damage": damage, "morale": morale, **extra}
+                  for tid, name, _count, damage, morale, extra in ITEM_TYPES]
     items, index = [], 0
-    for tid, _name, count, _damage, _morale in ITEM_TYPES:
+    for tid, _name, count, _damage, _morale, _extra in ITEM_TYPES:
         for n in range(1, count + 1):
             items.append({"id": f"{tid}-{n}", "type": tid, "room": ROOMS[mem[ITEM_ROOMS + index]][0]})
             index += 1
 
     scenario = {"id": "original", "name": "Original layout", "rooms": rooms, "links": links, "actors": actors,
-                "itemTypes": item_types, "items": items}
+                "roles": ROLES, "itemTypes": item_types, "items": items}
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     Path(out_path).write_text(json.dumps(scenario, indent=2) + "\n")
 

@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.event.EventText
 import org.tadams.nostromo.core.event.GameEvent
+import org.tadams.nostromo.core.event.NoiseKind
 import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.ActorId
 import org.tadams.nostromo.core.model.RoomId
@@ -104,6 +105,29 @@ class NarratorTest {
             listOf("Creature is attacking Roby", "Roby enters Bravo", "Roby enters Alpha", "Creature is attacking Roby"),
             lines,
         )
+    }
+
+    @Test
+    fun anUnseenDoorIsHeardSomewhere() {
+        val lines = shown(
+            GameEvent.ActorMoved(5, creature, a, b, seen()),
+            GameEvent.Noise(5, NoiseKind.DOOR, b, creature),
+        )
+        assertEquals(listOf("A door opens somewhere"), lines)
+    }
+
+    @Test
+    fun aDoorSomeoneSawIsntHeardAsWell() {
+        val lines = shown(
+            GameEvent.ActorMoved(5, roby, a, b, seen(listOf(roby))),
+            GameEvent.Noise(5, NoiseKind.DOOR, b, roby),
+        )
+        assertEquals(listOf("Roby enters Bravo"), lines)
+    }
+
+    @Test
+    fun theAndroidRevealIsNeverTold() {
+        assertEquals(emptyList(), shown(GameEvent.AndroidRevealed(5, hunter)))
     }
 
     @Test

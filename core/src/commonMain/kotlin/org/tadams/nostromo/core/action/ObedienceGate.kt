@@ -7,6 +7,7 @@ import org.tadams.nostromo.core.event.Visibility
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.Grilles
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.ActorKind
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.scenario.Rules
@@ -24,10 +25,11 @@ import org.tadams.nostromo.core.systems.MoraleSystem
  * Getting, dropping and swapping items are never refused: they were instant menu choices in the
  * original, outside the gate, so a Broken crew member can still pick up a weapon to steady themselves.
  *
+ * The android, before it's revealed, skips the morale check and never attacks the creature: an
+ * order to do so becomes a move to a random neighbouring room (docs/mechanics.md §8).
+ *
  * Differs from the original: its gate ran when an action was about to land, ours when it starts, so
  * a crew member whose morale breaks mid-move still arrives. Capacity is checked on landing, as there.
- * TODO the android: never attacks the creature (an attack order becomes a random move) and skips the
- *  morale check (build step 4).
  */
 internal object ObedienceGate {
 
@@ -39,12 +41,22 @@ internal object ObedienceGate {
 
         /** Ignore the order and run; see [panic]. */
         data object Panic : Verdict
+
+        /** Quietly do [action] instead (null: nothing), dropping the rest of the order. The android's dodge. */
+        data class Instead(val action: Action?) : Verdict
     }
 
-    /** Whether [actor] will do [action], checked as it starts. Only crew can refuse or panic. */
-    fun judge(actor: Actor, world: World, action: Action, rules: Rules): Verdict {
-        if (!actor.isCrew) return Verdict.Obey
-        if (action is Action.Get || action is Action.Drop || action is Action.Swap) return Verdict.Obey
+    /** Whether [actor] will do [action], checked as it starts. Only loyal crew can refuse or panic. */
+    fun judge(actor: Actor, world: World, action: Action, rules: Rules, scope: TickScope): Verdict {
+        if (!actor.isLoyalCrew) return Verdict.Obey
+        if (action is Action.Get || action is Action.Drop || action is Action.Swap || action is Action.Catch) return Verdict.Obey
+        if (actor.isAndroid) {
+            val target = (action as? Action.Attack)?.let { world.actors.getValue(it.target) }
+            if (target?.kind != ActorKind.CREATURE) return Verdict.Obey
+            val ways = world.room(actor.room).exits.filter { it.kind == LinkKind.DOOR || it.kind == LinkKind.LADDER }
+            if (ways.isEmpty()) return Verdict.Instead(null)
+            return Verdict.Instead(Action.Move(ways[scope.roll(ways.size, "${actor.name} (android) dodges the attack order")].to))
+        }
         val morale = MoraleSystem.effective(actor, world, rules)
         if (morale <= rules.panicMorale) return Verdict.Panic
         val needsNerve = when (action) {
@@ -92,7 +104,7 @@ internal object ObedienceGate {
      * duct), bodies included. Only crew are limited, and only crew count; the creature goes anywhere.
      */
     fun crowded(actor: Actor, world: World, action: Action, rules: Rules): FailReason? {
-        if (!actor.isCrew || action !is Action.Move) return null
+        if (!actor.isLoyalCrew || action !is Action.Move) return null
         val destination = world.room(action.to)
         val limit = if (destination.kind == RoomKind.DUCT) rules.ductCapacity else rules.roomCapacity
         val there = world.occupants(destination.id).count { it.isCrew }

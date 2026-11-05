@@ -914,7 +914,8 @@
       "morale": 4,
       "actionSeconds": {
         "removeGrille": 7.4
-      }
+      },
+      "catchDifficulty": 14
     },
     {
       "id": "broussard",
@@ -926,7 +927,8 @@
       "morale": 4,
       "actionSeconds": {
         "removeGrille": 8.9
-      }
+      },
+      "catchDifficulty": 14
     },
     {
       "id": "roby",
@@ -937,7 +939,8 @@
       "morale": 3,
       "actionSeconds": {
         "removeGrille": 13.3
-      }
+      },
+      "catchDifficulty": 13
     },
     {
       "id": "hill",
@@ -949,7 +952,8 @@
       "morale": 4,
       "actionSeconds": {
         "removeGrille": 7.4
-      }
+      },
+      "catchDifficulty": 13
     },
     {
       "id": "melkonis",
@@ -961,7 +965,8 @@
       "morale": 4,
       "actionSeconds": {
         "removeGrille": 13.3
-      }
+      },
+      "catchDifficulty": 13
     },
     {
       "id": "hunter",
@@ -973,7 +978,8 @@
       "morale": 4,
       "actionSeconds": {
         "removeGrille": 5.9
-      }
+      },
+      "catchDifficulty": 15
     },
     {
       "id": "faust",
@@ -985,7 +991,8 @@
       "morale": 3,
       "actionSeconds": {
         "removeGrille": 5.9
-      }
+      },
+      "catchDifficulty": 14
     },
     {
       "id": "creature",
@@ -999,9 +1006,29 @@
         "attack": 4.4,
         "prowl": 5.9,
         "removeGrille": 3.7
+      },
+      "grilleMoveSeconds": 3.7
+    },
+    {
+      "id": "cat",
+      "name": "Dan",
+      "kind": "animal",
+      "room": "recreation",
+      "brain": "cat",
+      "health": 1,
+      "actionSeconds": {
+        "move": 18.9
       }
     }
   ],
+  "roles": {
+    "android": {
+      "pick": "any"
+    },
+    "host": {
+      "pick": "any"
+    }
+  },
   "itemTypes": [
     {
       "id": "prod",
@@ -1019,37 +1046,52 @@
       "id": "tracker",
       "name": "Tracker",
       "damage": 1,
-      "morale": 0
+      "morale": 0,
+      "charges": 1,
+      "breaksWhenSpent": true,
+      "detects": true
     },
     {
       "id": "extinguisher",
       "name": "Fire Extinguisher",
       "damage": 0,
-      "morale": 1
+      "morale": 1,
+      "charges": 3,
+      "scares": true
     },
     {
       "id": "harpoon",
       "name": "Harpoon Gun",
       "damage": 5,
-      "morale": 2
+      "morale": 2,
+      "charges": 1,
+      "roomDamagePercent": 75,
+      "effect": "killRoom"
     },
     {
       "id": "laser",
       "name": "Laser Pistol",
       "damage": 2,
-      "morale": 2
+      "morale": 2,
+      "charges": 8,
+      "roomDamagePercent": 30
     },
     {
       "id": "net",
       "name": "Net",
       "damage": 0,
-      "morale": 0
+      "morale": 0,
+      "charges": 1,
+      "breaksWhenSpent": true,
+      "effect": "freeze",
+      "catchBonus": 4
     },
     {
       "id": "cat-box",
       "name": "Cat Box",
       "damage": 0,
-      "morale": 0
+      "morale": 0,
+      "catchBonus": 0
     },
     {
       "id": "spanner",

@@ -10,6 +10,7 @@ import org.tadams.nostromo.core.event.GameEvent
 import org.tadams.nostromo.core.model.Actor
 import org.tadams.nostromo.core.model.ScheduledAction
 import org.tadams.nostromo.core.model.World
+import org.tadams.nostromo.core.scenario.LinkKind
 
 /**
  * Starts queued actions, counts their timers down, and applies their effects when they finish.
@@ -23,7 +24,8 @@ internal object ActionSystem {
     /** Advances every actor's action by one tick. */
     fun run(world: World, scope: TickScope) {
         for (actor in world.actors.values) {
-            if (actor.isDown) continue
+            // Netted, or caught in a box: nothing happens until they're free.
+            if (actor.isDown || actor.frozenUntil > scope.tick || actor.caughtIn != null) continue
             if (actor.current == null) startNext(world, actor, scope)
             val current = actor.current ?: continue
             current.remainingTicks--
@@ -62,8 +64,12 @@ internal object ActionSystem {
             fail(actor, next, FailReason.NOT_CAPABLE, scope)
             return
         }
-        when (val verdict = ObedienceGate.judge(actor, world, next, scope.rules)) {
+        when (val verdict = ObedienceGate.judge(actor, world, next, scope.rules, scope)) {
             is ObedienceGate.Verdict.Refuse -> fail(actor, next, verdict.reason, scope)
+            is ObedienceGate.Verdict.Instead -> {
+                actor.queue.clear()
+                verdict.action?.let { begin(world, actor, it, scope) }
+            }
             ObedienceGate.Verdict.Panic -> {
                 actor.queue.clear()
                 ObedienceGate.panic(actor, world, next, scope)?.let { begin(world, actor, it, scope) }
@@ -79,7 +85,7 @@ internal object ActionSystem {
             fail(actor, action, problem, scope)
             return
         }
-        val total = duration(actor, action, scope)
+        val total = duration(world, actor, action, scope)
         actor.current = ScheduledAction(action, total)
         scope.emit(GameEvent.ActionStarted(scope.tick, actor.id, action, total, actor.selfVisibility()))
     }
@@ -98,7 +104,7 @@ internal object ActionSystem {
         }
         val holdUp = ObedienceGate.crowded(actor, world, action, scope.rules)
         if (holdUp != null) {
-            actor.current = ScheduledAction(action, Time.ticks(scope.rules.crowdedWaitSeconds + actor.speedPenaltySeconds))
+            actor.current = ScheduledAction(action, Time.ticks(scope.rules.crowdedWaitSeconds + penalty(actor, scope)))
             scope.emit(GameEvent.ActionDelayed(scope.tick, actor.id, action, holdUp, actor.selfVisibility()))
             return
         }
@@ -116,12 +122,26 @@ internal object ActionSystem {
 
     /**
      * How many ticks [action] takes for [actor]: the base duration for its type (the actor's own if
-     * they have one, otherwise the scenario's) plus the actor's speed penalty, for actions it slows.
+     * they have one, otherwise the scenario's; a move through a grille can have its own) plus the
+     * actor's speed and wound penalties, for actions they slow.
      */
-    private fun duration(actor: Actor, action: Action, scope: TickScope): Int {
-        val base = actor.actionSeconds[action.type] ?: scope.rules.baseSeconds(action.type)
-        // TODO add the wound penalty (mechanics.md §2: +1.2 s at health 3, +3.6 s at health 2) once actors have health.
-        val penalty = if (action.type in scope.rules.unslowedActions) 0.0 else actor.speedPenaltySeconds
+    private fun duration(world: World, actor: Actor, action: Action, scope: TickScope): Int {
+        val throughGrille = action is Action.Move &&
+            world.room(actor.room).exits.any { it.to == action.to && it.kind == LinkKind.GRILLE }
+        val base = actor.grilleMoveSeconds?.takeIf { throughGrille }
+            ?: actor.actionSeconds[action.type]
+            ?: scope.rules.baseSeconds(action.type)
+        val penalty = if (action.type in scope.rules.unslowedActions) 0.0 else penalty(actor, scope)
         return Time.ticks(base + penalty)
+    }
+
+    /**
+     * [actor]'s speed penalty plus, for crew, the wound penalty for their health
+     * ([org.tadams.nostromo.core.scenario.Rules.woundPenaltySeconds]; docs/mechanics.md §2).
+     * The original took the speed penalty from the selected crew member by mistake; ours uses the actor's own.
+     */
+    private fun penalty(actor: Actor, scope: TickScope): Double {
+        val wound = if (actor.isCrew) scope.rules.woundPenaltySeconds[actor.health] ?: 0.0 else 0.0
+        return actor.speedPenaltySeconds + wound
     }
 }

@@ -10,7 +10,11 @@ import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.TickScope
 
-/** Moving to an adjacent location: through a door, up a ladder, or into and along ducts. */
+/**
+ * Moving to an adjacent location: through a door, up a ladder, or into and along ducts. A move
+ * through a grille can have its own duration ([org.tadams.nostromo.core.scenario.ActorDef.grilleMoveSeconds]):
+ * the creature's is faster than its walk.
+ */
 internal object MoveDef : ActionDef<Action.Move> {
     override val type = ActionType.MOVE
 
@@ -19,8 +23,6 @@ internal object MoveDef : ActionDef<Action.Move> {
 
     override fun check(actor: Actor, world: World, action: Action.Move, rules: Rules): FailReason? {
         val exit = world.room(actor.room).exits.firstOrNull { it.to == action.to } ?: return FailReason.NOT_ADJACENT
-        // TODO the original's creature goes through a grille faster than it walks (50 ticks vs 80);
-        //  ours takes its normal move time. Crew take the same either way.
         val blocked = exit.kind == LinkKind.GRILLE && Grilles.roomOf(actor.room, world)?.grilleRemoved == false
         return if (blocked) FailReason.GRILLE_IN_PLACE else null
     }

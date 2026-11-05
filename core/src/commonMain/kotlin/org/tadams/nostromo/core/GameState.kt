@@ -7,6 +7,7 @@ import org.tadams.nostromo.core.model.ItemId
 import org.tadams.nostromo.core.model.RoomId
 import org.tadams.nostromo.core.model.World
 import org.tadams.nostromo.core.scenario.ActorKind
+import org.tadams.nostromo.core.scenario.LinkKind
 import org.tadams.nostromo.core.scenario.RoomKind
 import org.tadams.nostromo.core.scenario.Rules
 import org.tadams.nostromo.core.systems.MoraleSystem
@@ -49,6 +50,7 @@ data class GameState(
                 RoomState(
                     room.id, room.name, room.deck, room.kind, room.exits.map { it.to }, room.damagePercent,
                     grilleRemoved = Grilles.roomOf(room.id, world)?.grilleRemoved,
+                    passages = room.exits.filter { it.kind != LinkKind.GRILLE }.map { it.to },
                 )
             },
             actors = world.actors.values.map { actor ->
@@ -62,11 +64,14 @@ data class GameState(
                     queued = actor.queue.toList(),
                     inUse = actor.inUse,
                     carried = actor.carried,
-                    morale = if (actor.isCrew) MoraleSystem.effective(actor, world, rules) else null,
+                    morale = if (actor.isLoyalCrew) MoraleSystem.effective(actor, world, rules) else null,
                     bodyFound = actor.bodyFound,
+                    takesOrders = actor.takesOrders,
+                    caught = actor.caughtIn != null,
+                    frozen = actor.frozenUntil > tick,
                 )
             },
-            items = world.items.values.map { ItemState(it.id, it.type.name, it.room) },
+            items = world.items.values.filterNot { it.destroyed }.map { ItemState(it.id, it.type.name, it.room, it.charges) },
         )
     }
 }
@@ -82,6 +87,8 @@ data class RoomState(
     val damagePercent: Int,
     /** Whether this location's grille (to its duct, or for a duct to its room) is off; null if it has none. */
     val grilleRemoved: Boolean? = null,
+    /** [exits] not through a grille: doors and ladders from a room, duct links from a duct. */
+    val passages: List<RoomId> = emptyList(),
 )
 
 /** A character, creature or animal as the UI sees it. */
@@ -104,12 +111,25 @@ data class ActorState(
     val morale: Int? = null,
     /** For crew who are down: whether anyone has found them. Until then the player shouldn't be told. */
     val bodyFound: Boolean = false,
+    /**
+     * Whether orders to them do anything: false once down, or once revealed as the android. Revealed
+     * androids aren't otherwise flagged here, so the UI can't give the secret away; the player
+     * learns it from what crew see it do.
+     */
+    val takesOrders: Boolean = false,
+    /** For an animal: caught in a box or net, travelling with whoever holds it. */
+    val caught: Boolean = false,
+    /** Netted and unable to act for now. */
+    val frozen: Boolean = false,
 ) {
     val isDown get() = health <= 0
 }
 
-/** An item as the UI sees it. [room] is where it lies, or null if someone holds it. */
-data class ItemState(val id: ItemId, val name: String, val room: RoomId?)
+/**
+ * An item as the UI sees it. [room] is where it lies, or null if someone holds it. [charges] is uses
+ * left, or null for unlimited. Destroyed items aren't listed.
+ */
+data class ItemState(val id: ItemId, val name: String, val room: RoomId?, val charges: Int? = null)
 
 /** An action in progress: [elapsedTicks] of [totalTicks] done. */
 data class ActivityState(val action: Action, val elapsedTicks: Int, val totalTicks: Int) {
