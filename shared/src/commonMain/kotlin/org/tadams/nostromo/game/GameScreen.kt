@@ -405,6 +405,7 @@ private fun TerminalButton(label: String, onClick: () -> Unit, colour: Color = G
 /** Action bar colour for [action]: red to attack, purple for the ship's controls and the cat, green otherwise. */
 private fun actionColour(action: Action): Color = when (action) {
     is Action.Attack -> Red
+    is Action.Move -> LightGreen
     is Action.Catch, Action.ArmDestruct, Action.DisarmDestruct, is Action.BlowAirlock, is Action.SealAirlock,
     Action.Hypersleep, Action.Launch, Action.FightFire -> Purple
     else -> Green
