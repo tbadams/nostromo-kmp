@@ -197,7 +197,7 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Done (`systems/HazardSystem.kt`, `action/ShipDefs.kt`, `systems/EndSystem.kt`): special rooms are `RoomDef.features` (destruct and airlock controls, airlocks, intruder entry, hypersleep, launch, flammable, key systems). At 30% damage flammable rooms catch fire and key systems warn; at 70% a structural warning; any room at 100% blows up the ship. Fire adds 5% every 7.4 s until fought out with an extinguisher (1/2/3 goes by damage). The self-destruct runs 7:00 real time. Airlocks lose everything inside; an unhurt creature survives 2/16 and comes back at the shuttle bay. Hypersleep takes crew out of play. Launch needs every crew member in play (an unrevealed android too) and the cat aboard. All six endings and the Competence Rating table from mechanics §10.
    - UI: oxygen and the destruct clock in the status bar; FIRE / STRUCTURAL / BLOWN on the map; an end screen with the rating in parts.
    - Differs from the original: oxygen is used per breathing crew member (its 2 × N rate drained fastest with one missing); the destruct runs 7:00 real time (its "5:00" was about 7.4 minutes); the fire-fighting count resets once a fire is out; fire never spreads, as there.
-6. **New ideas:** crew reflexes, a creature that sabotages rooms, click-to-move queues, the randomizer, the stats screen.
+6. **New ideas:** crew reflexes, click-to-move queues, the randomizer.
    - TODO real audio for the door and grille sounds (and the tracker's beep). Today `:core` emits them (`GameEvent.Noise`); only the grille sound reaches the player, as a log line; playing a sound needs a small `expect`/`actual` audio player per platform in `:shared`.
    - Narrator idea: hide the "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew. (The "starts …" lines are already gone: the narrator logs no action starts except attacks.)
 
@@ -220,6 +220,7 @@ Worth doing, but not needed for the hack.
 - **Log each crew hit.** Today the narrator folds every fight into "X is attacking Y" plus one "Y is being wounded", so the player never sees their own crew's individual hits. Show each hit by crew ("Roby hits Creature", "…, to no effect"); keep folding the creature's.
   - About 10 lines in `game/Narrator.kt` and a test. The narrator needs to know who's crew: pass it the crew ids from `GameViewModel`.
   - Undecided: whether to drop the "is attacking" opening line for crew fights, so each swing is told once; and whether the revealed android's hits count as crew (it's crew by id; telling them apart needs a loyal-crew flag on `GameEvent.AttackHit`).
+- "Jumpscare" screen when alien present, like in original
 
 ## Decisions
 
