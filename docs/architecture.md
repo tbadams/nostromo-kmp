@@ -212,7 +212,7 @@ Worth doing, but not needed for the hack.
   - A formatter in `:shared` turns each `GameEvent`, `FailReason` and action into a string resource with arguments.
   - `:core` tests then check event fields, not English wording. A few `:shared` tests check the text.
   - Note: `getString` is `suspend` outside composables, so log text is formatted in the UI layer rather than in the view model's tick loop.
-- **"Centre" → "center".** Use US spelling everywhere: room names ("Command Centre"), ids (`command-centre`), docs, code and comments. Regenerate the scenario with `tools/make_scenario.py`.
+- **US spelling sweep.** Convert UK spellings to American everywhere: display strings first (room names like "Command Centre", "Armoury", "Laboratory Stores"; log lines like "depressurised"), then ids (`command-centre`, `armoury`), code names (`colour` → `color` in `GameScreen.kt` and elsewhere), docs and comments. Regenerate the scenario with `tools/make_scenario.py`.
 - **Interrupting AI decisions.** Today, as in the original, a brain decides only when its actor is idle and then commits: crew who walk into the creature's room just after it chose to move see it leave. Options, each behind a `Rules` flag so the original's behaviour stays the default:
   - **Interrupt on arrival:** when crew enter the creature's location, cancel its pending move or prowl so its brain decides again that tick. Cheap, since cancelling has no partial effect.
   - **General re-check:** an optional brain hook ("abandon this?") run each tick or on chosen events. More flexible, more machinery.

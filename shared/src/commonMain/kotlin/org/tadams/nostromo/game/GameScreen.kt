@@ -220,10 +220,13 @@ private fun BottomBar(ui: GameUiState, modifier: Modifier) {
         if (def != null) {
             val rules = ui.scenario.rules
             val grille = def.actionSeconds[ActionType.REMOVE_GRILLE] ?: rules.baseSeconds(ActionType.REMOVE_GRILLE)
+            // Extra time on every slowed action while hurt (Rules.woundPenaltySeconds); none when healthy.
+            val wound = rules.woundPenaltySeconds[actor.health] ?: 0.0
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 MonoText("speed penalty +${def.speedPenaltySeconds}s", DimGreen)
-                // Total wait: own base time plus the speed penalty, rounded to the tick as the simulation does.
-                MonoText("grille removal ${Time.seconds(Time.ticks(grille + def.speedPenaltySeconds))}", DimGreen)
+                if (wound > 0) MonoText("wound penalty +${wound}s", Amber)
+                // Total wait: own base time plus the speed and wound penalties, rounded to the tick as the simulation does.
+                MonoText("grille removal ${Time.seconds(Time.ticks(grille + def.speedPenaltySeconds + wound))}", DimGreen)
                 // Chances in ODDS of catching the cat with the box (the net adds its bonus).
                 MonoText("cat affinity ${ODDS - def.catchDifficulty}", DimGreen)
             }
