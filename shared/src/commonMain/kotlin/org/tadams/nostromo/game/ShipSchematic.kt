@@ -4,14 +4,19 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -25,6 +30,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
+import org.tadams.nostromo.core.action.Action
 import org.tadams.nostromo.core.RoomState
 import org.tadams.nostromo.core.model.RoomId
 import org.tadams.nostromo.core.scenario.LinkKind
@@ -40,16 +47,34 @@ private const val UNSEEN_ALPHA = 0.35f
  * The ship as a schematic: boxes for rooms, lines for doors and ladders, a small marker beside each
  * room for its duct segment, laid out by [layoutMap] (docs/proto-map.md). Shows the same things as
  * the text list ([MapView]); places no crew member who answers can see are dimmed, except where the
- * selected crew member can move.
+ * selected crew member can move. Tapping one of those (a light green room or duct) orders the move,
+ * the same as its button in the action bar.
  */
 @Composable
-internal fun ShipSchematic(ui: GameUiState, modifier: Modifier) {
+internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, modifier: Modifier) {
     val layout = remember(ui.scenario) { layoutMap(ui.scenario) }
     val measurer = rememberTextMeasurer()
     val view = MapView(ui)
     val rooms = ui.game.rooms.associateBy { it.id }
+    // Read the latest state from inside the long-lived tap handler.
+    val currentUi by rememberUpdatedState(ui)
+    val currentOnOrder by rememberUpdatedState(onOrder)
 
-    Canvas(modifier.border(1.dp, DimGreen).padding(8.dp)) {
+    Canvas(
+        modifier.border(1.dp, DimGreen).padding(8.dp).pointerInput(layout) {
+            detectTapGestures { tap ->
+                val geometry = Geometry(layout, size.toSize(), labelHeight = 16.dp.toPx())
+                val minTarget = 24.dp.toPx()
+                // Only the light green places, and only as moves on offer right now, so a tap can't order
+                // anything the action bar wouldn't. (Through an open grille is offered but not light green.)
+                val destinations = MapView(currentUi).destinations
+                val move = currentUi.actions.map { it.action }.filterIsInstance<Action.Move>()
+                    .filter { it.to in destinations }
+                    .firstOrNull { geometry.bounds(it.to, minTarget)?.contains(tap) == true }
+                if (move != null) currentOnOrder(move)
+            }
+        },
+    ) {
         val geometry = Geometry(layout, size, labelHeight = 16.dp.toPx())
         // Where the selected crew member can move is never dimmed, so the light green stays easy to see.
         fun alpha(id: RoomId) = if (id in view.seenRooms || id in view.destinations) 1f else UNSEEN_ALPHA
@@ -165,5 +190,13 @@ private class Geometry(private val layout: MapLayout, size: Size, private val la
         val room = layout.ducts[id] ?: return null
         val roomCentre = centre(room) ?: return null
         return roomCentre + Offset(boxSize.width / 2 + ductSize, boxSize.height / 2 + ductSize)
+    }
+
+    /** Where a tap on a room's box or a duct's marker lands, at least [minSize] across so small ducts are easy to hit. */
+    fun bounds(id: RoomId, minSize: Float): Rect? {
+        val centre = centre(id) ?: return null
+        val drawn = if (id in layout.rooms) boxSize else Size(ductSize, ductSize)
+        val size = Size(maxOf(drawn.width, minSize), maxOf(drawn.height, minSize))
+        return Rect(centre - Offset(size.width / 2, size.height / 2), size)
     }
 }

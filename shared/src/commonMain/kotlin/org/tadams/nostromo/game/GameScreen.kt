@@ -107,7 +107,7 @@ fun GameScreen(viewModel: GameViewModel) {
             Spacer(Modifier.width(8.dp))
             // The schematic (docs/proto-map.md) or the text list, switched with the label in the corner.
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                if (schematic) ShipSchematic(ui, Modifier.fillMaxSize()) else ShipMap(ui, Modifier.fillMaxSize())
+                if (schematic) ShipSchematic(ui, viewModel::order, Modifier.fillMaxSize()) else ShipMap(ui, Modifier.fillMaxSize())
                 Box(Modifier.align(Alignment.TopEnd).clickable { schematic = !schematic }.padding(horizontal = 8.dp, vertical = 4.dp)) {
                     MonoText(if (schematic) "[LIST]" else "[MAP]", Green)
                 }
