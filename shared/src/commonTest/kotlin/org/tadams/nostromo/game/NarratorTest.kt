@@ -108,21 +108,27 @@ class NarratorTest {
     }
 
     @Test
-    fun anUnseenDoorIsHeardSomewhere() {
-        val lines = shown(
-            GameEvent.ActorMoved(5, creature, a, b, seen()),
-            GameEvent.Noise(5, NoiseKind.DOOR, b, creature),
-        )
-        assertEquals(listOf("A door opens somewhere"), lines)
+    fun doorSoundsArentLogged() {
+        val entries = narrator.narrate(GameEvent.Noise(5, NoiseKind.DOOR, b, creature))
+        assertEquals(listOf(true), entries.map { it.hidden }, "only the dimmed debug line")
     }
 
     @Test
-    fun aDoorSomeoneSawIsntHeardAsWell() {
+    fun anUnseenGrilleIsHeardSomewhere() {
         val lines = shown(
-            GameEvent.ActorMoved(5, roby, a, b, seen(listOf(roby))),
-            GameEvent.Noise(5, NoiseKind.DOOR, b, roby),
+            GameEvent.GrilleRemoved(5, creature, b, seen()),
+            GameEvent.Noise(5, NoiseKind.GRILLE, b, creature),
         )
-        assertEquals(listOf("Roby enters Bravo"), lines)
+        assertEquals(listOf("A grille clangs somewhere"), lines)
+    }
+
+    @Test
+    fun aGrilleSomeoneSawIsntHeardAsWell() {
+        val lines = shown(
+            GameEvent.GrilleRemoved(5, roby, a, seen(listOf(roby))),
+            GameEvent.Noise(5, NoiseKind.GRILLE, a, roby),
+        )
+        assertEquals(listOf("Roby removes the grille in Alpha"), lines)
     }
 
     @Test

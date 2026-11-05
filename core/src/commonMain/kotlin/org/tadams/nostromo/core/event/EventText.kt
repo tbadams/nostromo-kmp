@@ -95,11 +95,8 @@ class EventText(scenario: Scenario) {
         NoiseKind.GRILLE -> "Grille sound: ${name(event.actor)} removes the grille in ${room(event.room)}"
     }
 
-    /** Narrator line for a sound the crew hear but can't place. */
-    fun heard(kind: NoiseKind) = when (kind) {
-        NoiseKind.DOOR -> "A door opens somewhere"
-        NoiseKind.GRILLE -> "A grille clangs somewhere"
-    }
+    /** Narrator line for a grille removal the crew hear but didn't see. */
+    fun heardGrille() = "A grille clangs somewhere"
 
     /** Narrator line when a fight between [attacker] and [target] starts. */
     fun fight(attacker: ActorId, target: ActorId) = "${name(attacker)} is attacking ${name(target)}"
