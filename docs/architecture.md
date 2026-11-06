@@ -199,6 +199,7 @@ Get a playable vertical slice working as early as possible, then add depth.
    - Differs from the original: oxygen is used per breathing crew member (its 2 × N rate drained fastest with one missing); the destruct runs 7:00 real time (its "5:00" was about 7.4 minutes); the fire-fighting count resets once a fire is out; fire never spreads, as there.
 6. **New ideas:** crew reflexes, click-to-move queues, the randomizer.
    - TODO real audio for the door and grille sounds (and the tracker's beep). Today `:core` emits them (`GameEvent.Noise`); only the grille sound reaches the player, as a log line; playing a sound needs a small `expect`/`actual` audio player per platform in `:shared`.
+   - TODO randomizer: the cat's start room. The original picks a random room 0–15 (`reference/notes/20_commands_crew.md:29`): the first 16 in its room table (airlocks, armory, cargo pods, command center, computer, corridors 1–7, cryo vault). Ours always starts in the Recreation Area, which the original's pick can never land on. Roll it from the game seed, from a list of candidate rooms the scenario gives.
    - Narrator idea: hide the "enters …" log lines for crew members' own moves, since the player ordered them and the map shows them. Keep them for the creature, the cat and anything else that isn't crew. (The "starts …" lines are already gone: the narrator logs no action starts except attacks.)
 
 UI work in `:shared` can run alongside steps 3–6 once the vertical slice's `GameState` exists.
@@ -227,13 +228,21 @@ Worth doing, but not needed for the hack.
 - Crew should refuse to enter airlock room altogether when it is blown, not agree to then end up in c6 again.
 - Difficulty/a11y options like toggling off 02 consumption or changing value
 - Add back short game from original
+- Prettier Map, more like orig, maybe as optional add on for scenario
+- More varied / complex AI types
+  - "Storyteller" amp up aggression / cheat towards people as goes longer without interaction, give break after
+  - hunter: keep cache of map tiles searched and pick them over looking for crew
+  - stealth: when cheat, prioritize lone crew
+  - sabatoeur: mre intentional about damaging the ship, somehow
+  - brainstorm more
+- Current'y says "Creature opens grate in Room" when a grille opens under you, might be more immersive to say "grate opnes"
 
 ## Decisions
 
 - **Tick rate:** fixed at 10 per second. There are no speed controls, and difficulty is tuned through rules (see "Time").
 - **Busy actors:** a new order replaces the current one, and the scheduler supports cancelling (see "Actions and commands").
 - **First scenario:** the original's map structure (rooms, links, ducts, decks; see mechanics §3), with our own names and setting. Other maps can come later if time allows. The data-driven scenario format is meant to make that easy.
-- **Android:** keep the target building, but it's low priority. Desktop is for development and web is for sharing. Avoid anything that would break Android, but don't spend time testing it.
+- **Android (platform):** keep the target building, but it's low priority. Desktop is for development and web is for sharing. Avoid anything that would break Android, but don't spend time testing it.
 - **Seconds in data, ticks in the simulation.** Scenario data gives durations in seconds; `:core` counts ticks.
   - The original ran at about 13.5 ticks per second (measured; see mechanics §2), so convert its durations to seconds first.
   - Displayed timers are real time: 7 minutes of ticks shows as 7:00.

@@ -110,6 +110,7 @@ CREATURE = {
 
 # The cat: moves every 255 ticks (18.9 s), never into ducts. The original started him in a random
 # room 0-15; ours starts in the Recreation Area.
+# TODO randomize the start room with the randomizer (docs/architecture.md, build step 6).
 CAT = {
     "id": "cat", "name": "Spot", "kind": "animal", "room": "recreation", "brain": "cat", "health": 1,
     "actionSeconds": {"move": 18.9},
