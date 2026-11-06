@@ -229,6 +229,7 @@ Worth doing, but not needed for the hack.
 - Difficulty/a11y options like toggling off 02 consumption or changing value
 - Add back short game from original
 - Prettier Map, more like orig, maybe as optional add on for scenario
+- The duct map nodes are too damn small . separately or in addition, a11y clickability for map nodes
 - More varied / complex AI types
   - "Storyteller" amp up aggression / cheat towards people as goes longer without interaction, give break after
   - hunter: keep cache of map tiles searched and pick them over looking for crew
