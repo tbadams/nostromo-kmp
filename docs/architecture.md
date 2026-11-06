@@ -41,7 +41,7 @@ class Simulation(scenario: Scenario, seed: Long) {
 
 - All durations in `:core` are in **ticks**, as in the original (see mechanics §2).
 - **Fixed tick rate.** A tick is always the same length of real time: **10 ticks per second (100 ms)**. Ticks ÷ 10 = seconds.
-  - No speed controls for now. A speed scaler would be easy to add later, but difficulty is better tuned through rules (timers, alien behaviour, oxygen) than through game speed.
+  - No speed controls for now. A speed scaler would be easy to add later, but difficulty is better tuned through rules (timers, alien behavior, oxygen) than through game speed.
   - The original ran at about 13.5 ticks per second (see mechanics §2). To keep its pace, convert its durations to **seconds** (original ticks ÷ 13.5) and then to our ticks. Never reuse its raw tick counts, which would make everything about 35% slower.
   - Progress bars and animation can update every frame by interpolating between ticks.
   - The original's ticks varied in length because sounds blocked its main loop, so busy moments slowed game time. That won't happen here.
@@ -84,7 +84,7 @@ Each system is unit-testable on a tiny hand-built world.
 
 ### Brains (AI)
 
-- Behaviour is pluggable through `interface Brain { fun decide(actor, options, world, scope): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way. A brain only chooses from `options` (what `Options` says the actor can do), as nostromo-js's AI chose from `Action.getChoices`; it never invents actions.
+- Behavior is pluggable through `interface Brain { fun decide(actor, options, world, scope): Action? }`, chosen by an id in the scenario data. nostromo-js used `"ai": "wumpus"` the same way. A brain only chooses from `options` (what `Options` says the actor can do), as nostromo-js's AI chose from `Action.getChoices`; it never invents actions.
 - The first brains:
   - `RandomWanderCreature`: faithful to the original
   - `AndroidBrain`
@@ -212,8 +212,7 @@ Worth doing, but not needed for the hack.
   - A formatter in `:shared` turns each `GameEvent`, `FailReason` and action into a string resource with arguments.
   - `:core` tests then check event fields, not English wording. A few `:shared` tests check the text.
   - Note: `getString` is `suspend` outside composables, so log text is formatted in the UI layer rather than in the view model's tick loop.
-- **US spelling sweep.** Convert UK spellings to American everywhere: display strings first (room names like "Command Centre", "Armoury", "Laboratory Stores"; log lines like "depressurised"), then ids (`command-centre`, `armoury`), code names (`colour` → `color` in `GameScreen.kt` and elsewhere), docs and comments. Regenerate the scenario with `tools/make_scenario.py`.
-- **Interrupting AI decisions.** Today, as in the original, a brain decides only when its actor is idle and then commits: crew who walk into the creature's room just after it chose to move see it leave. Options, each behind a `Rules` flag so the original's behaviour stays the default:
+- **Interrupting AI decisions.** Today, as in the original, a brain decides only when its actor is idle and then commits: crew who walk into the creature's room just after it chose to move see it leave. Options, each behind a `Rules` flag so the original's behavior stays the default:
   - **Interrupt on arrival:** when crew enter the creature's location, cancel its pending move or prowl so its brain decides again that tick. Cheap, since cancelling has no partial effect.
   - **General re-check:** an optional brain hook ("abandon this?") run each tick or on chosen events. More flexible, more machinery.
   - **Victim chosen when the attack lands:** the original picks whom to hit from whoever is present when the attack resolves; ours fixes the target at decision time, so an attack fails if that one target leaves even with others still there.
@@ -221,15 +220,13 @@ Worth doing, but not needed for the hack.
   - About 10 lines in `game/Narrator.kt` and a test. The narrator needs to know who's crew: pass it the crew ids from `GameViewModel`.
   - Undecided: whether to drop the "is attacking" opening line for crew fights, so each swing is told once; and whether the revealed android's hits count as crew (it's crew by id; telling them apart needs a loyal-crew flag on `GameEvent.AttackHit`).
 - TODO **Typewriter effect** for the end-of-game report and new log lines: text appears a character at a time, as on a terminal.
-- TODO **Centre the end-of-game report text** (`EndScreen` in `game/GameScreen.kt`); today it's left-aligned.
+- TODO **Center the end-of-game report text** (`EndScreen` in `game/GameScreen.kt`); today it's left-aligned.
 - TODO **Spacing the cat loses the game, immediately.** Today a cat blown out of an airlock (loose, or caught in an item inside) is just gone, and since launch only waits for animals still in play, it's a shortcut past catching it. Make it a new `Ending` in `EndSystem`, with its own ending text and a rating of 0.
 - TODO **Android and mobile web support.** The screen is laid out for a wide desktop window (fixed 400dp log, 240dp action bar) and keyboard shortcuts. Phones need a narrow layout and touch-sized targets.
 - "Jumpscare" screen when alien present, like in original
-- Clicking on non-movable room selects crew in that room
-- Adjacent room color needs to differ from normal color more
 - Crew should refuse to enter airlock room altogether when it is blown, not agree to then end up in c6 again.
-- Sometimes the keyboard keys seem to just stop working
-- Difficulty/a11y options like toggling off 
+- Difficulty/a11y options like toggling off 02 consumption or changing value
+- Add back short game from original
 
 ## Decisions
 

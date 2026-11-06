@@ -26,7 +26,7 @@ import org.tadams.nostromo.core.systems.MoraleSystem
  * original, outside the gate, so a Broken crew member can still pick up a weapon to steady themselves.
  *
  * The android, before it's revealed, skips the morale check and never attacks the creature: an
- * order to do so becomes a move to a random neighbouring room (docs/mechanics.md §8).
+ * order to do so becomes a move to a random neighboring room (docs/mechanics.md §8).
  *
  * Differs from the original: its gate ran when an action was about to land, ours when it starts, so
  * a crew member whose morale breaks mid-move still arrives. Capacity is checked on landing, as there.
@@ -77,7 +77,7 @@ internal object ObedienceGate {
 
     /**
      * [actor] panics instead of doing [ignored], and this returns where they run to (null: nowhere).
-     * - In a room: they drop everything and run to a random neighbouring room, by door or ladder.
+     * - In a room: they drop everything and run to a random neighboring room, by door or ladder.
      * - In a duct: they rip out its grille if it's in place, and climb out into its room.
      *
      * Differs from the original: its random pick could land on the room itself (its exit tables were

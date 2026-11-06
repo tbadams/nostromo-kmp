@@ -156,7 +156,7 @@ private val PAGES = listOf(
         "A fire keeps damaging its room until someone puts it out.",
         "",
         "# Special rooms",
-        "Command Centre: arm or override the self-destruct.",
+        "Command Center: arm or override the self-destruct.",
         "Corridor 6: blow or seal the airlocks. Anything inside an airlock when it's blown is lost.",
         "Cryo Vault: crew can go into hypersleep, leaving play safely. Sleeping crew do not consume oxygen.",
         "Shuttle: launch, if everyone alive is aboard.",
@@ -172,24 +172,24 @@ private fun Screen(content: @Composable androidx.compose.foundation.layout.BoxSc
 }
 
 @Composable
-private fun MenuButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth(), colour: Color = Green) {
+private fun MenuButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth(), color: Color = Green) {
     Box(
         modifier
-            .border(1.dp, colour, RectangleShape)
-            .background(colour.copy(alpha = 0.12f), RectangleShape)
+            .border(1.dp, color, RectangleShape)
+            .background(color.copy(alpha = 0.12f), RectangleShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Line(label, colour, bold = true)
+        Line(label, color, bold = true)
     }
 }
 
 @Composable
-private fun MenuButton(label: String, onClick: () -> Unit, colour: Color) = MenuButton(label, onClick, Modifier.fillMaxWidth(), colour)
+private fun MenuButton(label: String, onClick: () -> Unit, color: Color) = MenuButton(label, onClick, Modifier.fillMaxWidth(), color)
 
 @Composable
-private fun Line(text: String, colour: Color, bold: Boolean = false) {
-    Text(text, color = colour, fontFamily = FontFamily.Monospace, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+private fun Line(text: String, color: Color, bold: Boolean = false) {
+    Text(text, color = color, fontFamily = FontFamily.Monospace, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         style = MaterialTheme.typography.bodyMedium)
 }

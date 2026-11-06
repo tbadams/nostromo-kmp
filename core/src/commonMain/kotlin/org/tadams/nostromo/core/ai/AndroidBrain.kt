@@ -22,7 +22,7 @@ internal object AndroidBrain : Brain {
 }
 
 /**
- * The cat (docs/mechanics.md §9): every so often it wanders to a neighbouring room, never into
+ * The cat (docs/mechanics.md §9): every so often it wanders to a neighboring room, never into
  * ducts. The pause between moves is the scenario's move time for the cat (the original: 255 ticks).
  *
  * Differs from the original: there, landing with the creature made it move again at once; ours

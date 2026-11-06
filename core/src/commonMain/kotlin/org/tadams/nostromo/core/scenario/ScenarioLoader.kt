@@ -138,15 +138,15 @@ object ScenarioValidator {
 
     /** Rooms reachable from [start], ignoring link direction: is the map one piece? */
     private fun reachable(start: RoomId, links: List<LinkDef>): Set<RoomId> {
-        val neighbours = mutableMapOf<RoomId, MutableSet<RoomId>>()
+        val neighbors = mutableMapOf<RoomId, MutableSet<RoomId>>()
         for (link in links) {
-            neighbours.getOrPut(link.from) { mutableSetOf() } += link.to
-            neighbours.getOrPut(link.to) { mutableSetOf() } += link.from
+            neighbors.getOrPut(link.from) { mutableSetOf() } += link.to
+            neighbors.getOrPut(link.to) { mutableSetOf() } += link.from
         }
         val seen = mutableSetOf(start)
         val frontier = ArrayDeque(listOf(start))
         while (frontier.isNotEmpty()) {
-            for (next in neighbours[frontier.removeFirst()].orEmpty()) {
+            for (next in neighbors[frontier.removeFirst()].orEmpty()) {
                 if (seen.add(next)) frontier.addLast(next)
             }
         }

@@ -223,7 +223,7 @@ sealed interface GameEvent {
 
     /**
      * [holder]'s detector ([item]: a tracker, or a caught animal) changed reading: [movement] means
-     * something alive is in a neighbouring location. Reported only when it changes.
+     * something alive is in a neighboring location. Reported only when it changes.
      */
     data class DetectorReading(
         override val tick: Long,

@@ -16,7 +16,7 @@ Ideas marked **(nostromo-js)** were already started in `~/dev/nostromo-js`, the 
   - Debug: everything, including alien decisions, dice rolls with their thresholds, timers and hidden roles.
 - Open questions:
   - Newest at the top or the bottom? (nostromo-js TODO: "upside down event log")
-  - Should log entries be filterable or colour-coded by type (combat, sound, ship status)?
+  - Should log entries be filterable or color-coded by type (combat, sound, ship status)?
   - Should log entries also go to the browser console? (nostromo-js TODO)
 
 ## 2. Interface
@@ -35,7 +35,7 @@ Ideas marked **(nostromo-js)** were already started in `~/dev/nostromo-js`, the 
   - What happens if a queued step is blocked (full room, §2) or the character panics partway along?
   - Should ducts be included in paths automatically, or only when chosen explicitly?
 - **Crew tabs.** Every character has a tab that's always visible and can be clicked to select them.
-  - Tabs could also show some status at a glance: health or morale indicators, a busy or progress marker for the current action, an alert when they're under threat or in the same room as something dangerous, and greying out when dead or in hypersleep.
+  - Tabs could also show some status at a glance: health or morale indicators, a busy or progress marker for the current action, an alert when they're under threat or in the same room as something dangerous, and graying out when dead or in hypersleep.
   - Should a tab flash when something happens to that character, to draw attention without having to read the log?
 - **Keyboard shortcuts:**
   - Number keys select crew members (1 = first crew member, and so on), matching the tab order.
@@ -64,11 +64,11 @@ Ideas marked **(nostromo-js)** were already started in `~/dev/nostromo-js`, the 
 The original rarely damages the ship (§3, §10). Ideas to make it come up more often:
 
 - **More chances for fire:** more rooms that can burn, not only the engines; weapon fire, electrical faults.
-- **Fire spreading** to neighbouring rooms over time, if not put out.
+- **Fire spreading** to neighboring rooms over time, if not put out.
   - Note: the original never resets its fire-fighting counter (§10). Don't copy that bug.
 - **The alien damages rooms on purpose.** For example, after being driven off it attacks a room's systems to **lure crew out** into the open.
   - This also answers the problem that the original alien only wanders at random (§6, §12).
-- Should damage effects change the map? A damaged room becomes impassable, a breach depressurises a room, a door jams.
+- Should damage effects change the map? A damaged room becomes impassable, a breach depressurizes a room, a door jams.
 
 ## 6. Hidden roles
 
@@ -90,7 +90,7 @@ The original rarely damages the ship (§3, §10). Ideas to make it come up more 
   - `defs` hold types (actors, items, rooms, doors, specials) with a `default` that each type deep-merges into (`mergeDeep` in `util.js`).
   - Doors are typed (grate = locked, ladder = floor change, vent).
   - Specials (self-destruct, hypersleep, launch, airlock, oxygen) are generic counters or triggers using **selectors**, e.g. oxygen counts actors with `breathe: true`.
-  - `ai` names a behaviour on each actor, e.g. `"wumpus"` for the creature.
+  - `ai` names a behavior on each actor, e.g. `"wumpus"` for the creature.
   - The map is checked for connectivity on load.
 - Possible alien difficulty features to make into settings:
   - speed

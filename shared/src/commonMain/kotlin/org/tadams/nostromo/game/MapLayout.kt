@@ -87,12 +87,12 @@ fun layoutMap(scenario: Scenario): MapLayout {
     return MapLayout(rooms, ducts, bands, cols, firstRow)
 }
 
-/** Places one deck's rooms on a grid, normalised so the smallest column and row are 0. */
+/** Places one deck's rooms on a grid, normalized so the smallest column and row are 0. */
 private fun layoutDeck(members: List<RoomId>, edges: List<Pair<RoomId, RoomId>>): Map<RoomId, Cell> {
-    val neighbours = members.associateWith { mutableListOf<RoomId>() }
+    val neighbors = members.associateWith { mutableListOf<RoomId>() }
     for ((a, b) in edges) {
-        if (b !in neighbours.getValue(a)) neighbours.getValue(a) += b
-        if (a !in neighbours.getValue(b)) neighbours.getValue(b) += a
+        if (b !in neighbors.getValue(a)) neighbors.getValue(a) += b
+        if (a !in neighbors.getValue(b)) neighbors.getValue(b) += a
     }
 
     val cells = LinkedHashMap<RoomId, Cell>()
@@ -104,14 +104,14 @@ private fun layoutDeck(members: List<RoomId>, edges: List<Pair<RoomId, RoomId>>)
 
     while (cells.size < members.size) {
         // Each separate group starts right of everything placed so far, at its most-linked room.
-        val start = members.filter { it !in cells }.maxBy { neighbours.getValue(it).size }
+        val start = members.filter { it !in cells }.maxBy { neighbors.getValue(it).size }
         val startCol = if (cells.isEmpty()) 0 else cells.values.maxOf { it.col } + 2
         val startRow = if (cells.isEmpty()) 0 else cells.values.minOf { it.row }
         place(start, Cell(startCol, startRow))
         val queue = ArrayDeque(listOf(start))
         while (queue.isNotEmpty()) {
             val room = queue.removeFirst()
-            for (next in neighbours.getValue(room)) {
+            for (next in neighbors.getValue(room)) {
                 if (next in cells) continue
                 val candidates = nearestFree(cells.getValue(room), taken)
                 place(next, candidates.minBy { badLines(cells + (next to it), edges) })

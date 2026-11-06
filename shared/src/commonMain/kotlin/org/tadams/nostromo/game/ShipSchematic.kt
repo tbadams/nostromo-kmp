@@ -45,7 +45,7 @@ import org.tadams.nostromo.ui.Green
 /**
  * The ship as a schematic: boxes for rooms, lines for doors and ladders, a small marker beside each
  * room for its duct segment, laid out by [layoutMap] (docs/proto-map.md). Shows the same things as
- * the text list ([MapView]), in the same colours.
+ * the text list ([MapView]), in the same colors.
  *
  * Tapping where the selected crew member can move (a cyan room or duct) orders the move, the
  * same as its button in the action bar. Tapping any other room or duct with crew in it, bar the
@@ -108,8 +108,8 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, onSelect:
         // Links first, so the boxes sit on top of them.
         for (link in ui.scenario.links) {
             if (!visible(link.from) || !visible(link.to)) continue
-            val a = geometry.centre(link.from) ?: continue
-            val b = geometry.centre(link.to) ?: continue
+            val a = geometry.center(link.from) ?: continue
+            val b = geometry.center(link.to) ?: continue
             when (link.kind) {
                 LinkKind.DOOR -> drawLine(Green.copy(alpha = 0.6f), a, b, thin)
                 LinkKind.LADDER -> drawLine(DimGreen, a, b, thin * 2)
@@ -132,35 +132,35 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, onSelect:
         // Duct segments as small markers, with whoever is visibly inside.
         for ((id, _) in layout.ducts) {
             val duct = rooms[id]?.takeIf(view::shown) ?: continue
-            val centre = geometry.centre(id) ?: continue
-            val colour = view.colour(duct)
+            val center = geometry.center(id) ?: continue
+            val color = view.color(duct)
             val half = geometry.ductSize / 2
-            val topLeft = centre - Offset(half, half)
-            drawRect(colour.copy(alpha = 0.3f), topLeft, Size(geometry.ductSize, geometry.ductSize))
-            drawRect(colour, topLeft, Size(geometry.ductSize, geometry.ductSize), style = Stroke(thin))
+            val topLeft = center - Offset(half, half)
+            drawRect(color.copy(alpha = 0.3f), topLeft, Size(geometry.ductSize, geometry.ductSize))
+            drawRect(color, topLeft, Size(geometry.ductSize, geometry.ductSize), style = Stroke(thin))
             val names = view.names(duct)
-            if (names.isNotEmpty()) drawLabel(measurer, names, centre + Offset(half + 2.dp.toPx(), -half), colour)
+            if (names.isNotEmpty()) drawLabel(measurer, names, center + Offset(half + 2.dp.toPx(), -half), color)
         }
     }
 }
 
 /** A room box: outline and faded fill, its name, then any alarms and who's visibly there. */
 private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapView, measurer: TextMeasurer) {
-    val centre = geometry.centre(room.id) ?: return
-    val colour = view.colour(room)
-    val topLeft = centre - Offset(geometry.boxSize.width / 2, geometry.boxSize.height / 2)
+    val center = geometry.center(room.id) ?: return
+    val color = view.color(room)
+    val topLeft = center - Offset(geometry.boxSize.width / 2, geometry.boxSize.height / 2)
     val selected = room.id == view.selectedRoom
     val names = view.names(room)
     // An opaque base under the faded fill, so lines stop at the box's edge rather than showing through it.
     drawRect(Background, topLeft, geometry.boxSize)
     // A stronger fill where someone is visibly there, so occupied rooms stand out at a glance.
-    drawRect(colour.copy(alpha = if (names.isNotEmpty()) OCCUPIED_FILL else EMPTY_FILL), topLeft, geometry.boxSize)
-    drawRect(colour, topLeft, geometry.boxSize, style = Stroke((if (selected) 2 else 1).dp.toPx()))
+    drawRect(color.copy(alpha = if (names.isNotEmpty()) OCCUPIED_FILL else EMPTY_FILL), topLeft, geometry.boxSize)
+    drawRect(color, topLeft, geometry.boxSize, style = Stroke((if (selected) 2 else 1).dp.toPx()))
 
     val inset = 3.dp.toPx()
     val textWidth = (geometry.boxSize.width - 2 * inset).toInt().coerceAtLeast(1)
     val marker = if (room.id in view.destinations) "> " else ""
-    val nameLine = drawLabel(measurer, marker + room.name, topLeft + Offset(inset, inset), colour, bold = selected, maxWidth = textWidth)
+    val nameLine = drawLabel(measurer, marker + room.name, topLeft + Offset(inset, inset), color, bold = selected, maxWidth = textWidth)
 
     val alarms = view.alarms(room)
     if (alarms.isEmpty() && names.isEmpty()) return
@@ -168,24 +168,24 @@ private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapVie
         if (alarms.isNotEmpty()) withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) { append("$alarms ") }
         append(names)
     }
-    val text = measurer.measure(second, labelStyle(colour), overflow = TextOverflow.Ellipsis, maxLines = 1,
+    val text = measurer.measure(second, labelStyle(color), overflow = TextOverflow.Ellipsis, maxLines = 1,
         constraints = Constraints(maxWidth = textWidth))
     drawText(text, topLeft = topLeft + Offset(inset, inset + nameLine))
 }
 
 /** Draws one line of text at [topLeft]; returns its height. */
 private fun DrawScope.drawLabel(
-    measurer: TextMeasurer, text: String, topLeft: Offset, colour: Color, bold: Boolean = false,
+    measurer: TextMeasurer, text: String, topLeft: Offset, color: Color, bold: Boolean = false,
     maxWidth: Int = (size.width - topLeft.x).toInt().coerceAtLeast(1),
 ): Float {
-    val measured = measurer.measure(text, labelStyle(colour, bold), overflow = TextOverflow.Ellipsis, maxLines = 1,
+    val measured = measurer.measure(text, labelStyle(color, bold), overflow = TextOverflow.Ellipsis, maxLines = 1,
         constraints = Constraints(maxWidth = maxWidth))
     drawText(measured, topLeft = topLeft)
     return measured.size.height.toFloat()
 }
 
-private fun labelStyle(colour: Color, bold: Boolean = false) =
-    TextStyle(color = colour, fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
+private fun labelStyle(color: Color, bold: Boolean = false) =
+    TextStyle(color = color, fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal)
 
 /** Pixel positions for [layout] in a canvas of [size], with a label gutter of [labelHeight] above each band. */
 private class Geometry(private val layout: MapLayout, size: Size, private val labelHeight: Float) {
@@ -199,22 +199,22 @@ private class Geometry(private val layout: MapLayout, size: Size, private val la
 
     fun bandTop(index: Int) = layout.bands[index].firstRow * cellHeight + index * labelHeight
 
-    /** The centre of a room's box, or of a duct's marker (just off its room box's bottom-right corner). */
-    fun centre(id: RoomId): Offset? {
+    /** The center of a room's box, or of a duct's marker (just off its room box's bottom-right corner). */
+    fun center(id: RoomId): Offset? {
         layout.rooms[id]?.let { cell ->
             val y = bandTop(bandOfRow[cell.row]) + labelHeight + (cell.row - layout.bands[bandOfRow[cell.row]].firstRow + 0.5f) * cellHeight
             return Offset((cell.col + 0.5f) * cellWidth, y)
         }
         val room = layout.ducts[id] ?: return null
-        val roomCentre = centre(room) ?: return null
-        return roomCentre + Offset(boxSize.width / 2 + ductSize, boxSize.height / 2 + ductSize)
+        val roomCenter = center(room) ?: return null
+        return roomCenter + Offset(boxSize.width / 2 + ductSize, boxSize.height / 2 + ductSize)
     }
 
     /** Where a tap on a room's box or a duct's marker lands, at least [minSize] across so small ducts are easy to hit. */
     fun bounds(id: RoomId, minSize: Float): Rect? {
-        val centre = centre(id) ?: return null
+        val center = center(id) ?: return null
         val drawn = if (id in layout.rooms) boxSize else Size(ductSize, ductSize)
         val size = Size(maxOf(drawn.width, minSize), maxOf(drawn.height, minSize))
-        return Rect(centre - Offset(size.width / 2, size.height / 2), size)
+        return Rect(center - Offset(size.width / 2, size.height / 2), size)
     }
 }

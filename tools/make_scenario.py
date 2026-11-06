@@ -26,9 +26,9 @@ SHUTTLE = 0x22
 
 # Original room index -> (id, name). Our own names for the same rooms.
 ROOMS = [
-    ("airlock-1", "Airlock 1"), ("airlock-2", "Airlock 2"), ("armoury", "Armoury"),
+    ("airlock-1", "Airlock 1"), ("airlock-2", "Airlock 2"), ("armory", "Armory"),
     ("cargo-pod-1", "Cargo Pod 1"), ("cargo-pod-2", "Cargo Pod 2"), ("cargo-pod-3", "Cargo Pod 3"),
-    ("command-centre", "Command Centre"), ("computer-room", "Computer Room"),
+    ("command-center", "Command Center"), ("computer-room", "Computer Room"),
     ("corridor-1", "Corridor 1"), ("corridor-2", "Corridor 2"), ("corridor-3", "Corridor 3"),
     ("corridor-4", "Corridor 4"), ("corridor-5", "Corridor 5"), ("corridor-6", "Corridor 6"),
     ("corridor-7", "Corridor 7"), ("cryo-vault", "Cryo Vault"), ("engineering", "Engineering"),
@@ -51,9 +51,9 @@ SHIP_DECKS = {"upper", "middle", "lower"}
 # Cat-catching difficulty is the original's per-character value (docs/mechanics.md §2).
 CREW = [
     # name,       original, start room,      health, speed penalty s, base morale, grille removal s, catch
-    ("Martin",    "Dallas",  "command-centre", 5, 0.5, 4, 7.4, 14),
-    ("Broussard", "Kane",    "command-centre", 4, 0.4, 4, 8.9, 14),
-    ("Roby",      "Ripley",  "command-centre", 3, 0.0, 3, 13.3, 13),
+    ("Martin",    "Dallas",  "command-center", 5, 0.5, 4, 7.4, 14),
+    ("Broussard", "Kane",    "command-center", 4, 0.4, 4, 8.9, 14),
+    ("Roby",      "Ripley",  "command-center", 3, 0.0, 3, 13.3, 13),
     ("Hill",      "Ash",     "mess",           4, 0.5, 4, 7.4, 13),
     ("Melkonis",  "Lambert", "mess",           5, 0.2, 4, 13.3, 13),
     ("Hunter",    "Parker",  "mess",           5, 0.7, 4, 5.9, 15),
@@ -70,7 +70,7 @@ OPEN_GRILLES = {"corridor-6"}
 # What's special about each room (docs/mechanics.md §3, §7, §10): the original's room menus and
 # damage effects.
 FEATURES = {
-    "command-centre": ["destructControls", "keySystem"],
+    "command-center": ["destructControls", "keySystem"],
     "computer-room": ["keySystem"],
     "life-support": ["keySystem"],
     "shuttle-bay": ["keySystem", "intruderEntry"],

@@ -145,7 +145,7 @@ data class ActorState(
      * learns it from what crew see it do.
      */
     val takesOrders: Boolean = false,
-    /** For an animal: caught in a box or net, travelling with whoever holds it. */
+    /** For an animal: caught in a box or net, traveling with whoever holds it. */
     val caught: Boolean = false,
     /** Netted and unable to act for now. */
     val frozen: Boolean = false,

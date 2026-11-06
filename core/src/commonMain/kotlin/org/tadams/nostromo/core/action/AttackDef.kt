@@ -125,7 +125,7 @@ internal object AttackDef : ActionDef<Action.Attack> {
     /**
      * After a hit that didn't kill it, the creature may flee (docs/mechanics.md §7): each healthy crew
      * member here attacking it adds 1 if Confident plus its damage ÷ [Rules.fleeDamageDivisor]; it
-     * flees with that many chances in 16, never on a 15. It jumps at once to a random neighbouring
+     * flees with that many chances in 16, never on a 15. It jumps at once to a random neighboring
      * location, and each attacker gains [Rules.fleeMorale].
      */
     private fun maybeFlee(creature: Actor, striker: Actor, world: World, scope: TickScope) {

@@ -15,8 +15,8 @@
       "features": ["airlock"]
     },
     {
-      "id": "armoury",
-      "name": "Armoury",
+      "id": "armory",
+      "name": "Armory",
       "deck": "middle"
     },
     {
@@ -35,8 +35,8 @@
       "deck": "lower"
     },
     {
-      "id": "command-centre",
-      "name": "Command Centre",
+      "id": "command-center",
+      "name": "Command Center",
       "deck": "middle",
       "features": ["destructControls", "keySystem"]
     },
@@ -203,8 +203,8 @@
       "kind": "duct"
     },
     {
-      "id": "armoury-duct",
-      "name": "Armoury duct",
+      "id": "armory-duct",
+      "name": "Armory duct",
       "deck": "middle",
       "kind": "duct"
     },
@@ -227,8 +227,8 @@
       "kind": "duct"
     },
     {
-      "id": "command-centre-duct",
-      "name": "Command Centre duct",
+      "id": "command-center-duct",
+      "name": "Command Center duct",
       "deck": "middle",
       "kind": "duct"
     },
@@ -405,7 +405,7 @@
       "to": "corridor-6"
     },
     {
-      "from": "armoury",
+      "from": "armory",
       "to": "corridor-3"
     },
     {
@@ -430,7 +430,7 @@
       "kind": "ladder"
     },
     {
-      "from": "command-centre",
+      "from": "command-center",
       "to": "corridor-1"
     },
     {
@@ -553,8 +553,8 @@
       "kind": "grille"
     },
     {
-      "from": "armoury",
-      "to": "armoury-duct",
+      "from": "armory",
+      "to": "armory-duct",
       "kind": "grille"
     },
     {
@@ -573,8 +573,8 @@
       "kind": "grille"
     },
     {
-      "from": "command-centre",
-      "to": "command-centre-duct",
+      "from": "command-center",
+      "to": "command-center-duct",
       "kind": "grille"
     },
     {
@@ -744,12 +744,12 @@
       "kind": "duct"
     },
     {
-      "from": "armoury-duct",
+      "from": "armory-duct",
       "to": "corridor-4-duct",
       "kind": "duct"
     },
     {
-      "from": "armoury-duct",
+      "from": "armory-duct",
       "to": "infirmary-stores-duct",
       "kind": "duct"
     },
@@ -779,7 +779,7 @@
       "kind": "duct"
     },
     {
-      "from": "command-centre-duct",
+      "from": "command-center-duct",
       "to": "corridor-1-duct",
       "kind": "duct"
     },
@@ -920,7 +920,7 @@
       "id": "martin",
       "name": "Martin",
       "kind": "crew",
-      "room": "command-centre",
+      "room": "command-center",
       "health": 5,
       "speedPenaltySeconds": 0.5,
       "morale": 4,
@@ -933,7 +933,7 @@
       "id": "broussard",
       "name": "Broussard",
       "kind": "crew",
-      "room": "command-centre",
+      "room": "command-center",
       "health": 4,
       "speedPenaltySeconds": 0.4,
       "morale": 4,
@@ -946,7 +946,7 @@
       "id": "roby",
       "name": "Roby",
       "kind": "crew",
-      "room": "command-centre",
+      "room": "command-center",
       "health": 3,
       "morale": 3,
       "actionSeconds": {
@@ -1132,12 +1132,12 @@
     {
       "id": "incinerator-1",
       "type": "incinerator",
-      "room": "command-centre"
+      "room": "command-center"
     },
     {
       "id": "incinerator-2",
       "type": "incinerator",
-      "room": "command-centre"
+      "room": "command-center"
     },
     {
       "id": "incinerator-3",
@@ -1147,7 +1147,7 @@
     {
       "id": "tracker-1",
       "type": "tracker",
-      "room": "command-centre"
+      "room": "command-center"
     },
     {
       "id": "tracker-2",
@@ -1182,17 +1182,17 @@
     {
       "id": "laser-1",
       "type": "laser",
-      "room": "armoury"
+      "room": "armory"
     },
     {
       "id": "laser-2",
       "type": "laser",
-      "room": "armoury"
+      "room": "armory"
     },
     {
       "id": "laser-3",
       "type": "laser",
-      "room": "armoury"
+      "room": "armory"
     },
     {
       "id": "net-1",

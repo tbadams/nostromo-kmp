@@ -57,7 +57,7 @@ internal object DropDef : ActionDef<Action.Drop> {
 /**
  * Trying to catch an animal here (docs/mechanics.md §9). Needs a catching item in use with nothing
  * in it already. Succeeds on a roll of 0-15 at least the crew member's difficulty, less the item's
- * bonus; the animal then rides in the item. On a miss it bolts to a neighbouring room at once.
+ * bonus; the animal then rides in the item. On a miss it bolts to a neighboring room at once.
  */
 internal object CatchDef : ActionDef<Action.Catch> {
     override val type = ActionType.CATCH

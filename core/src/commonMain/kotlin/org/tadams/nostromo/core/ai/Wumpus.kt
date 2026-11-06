@@ -9,7 +9,7 @@ import org.tadams.nostromo.core.TickScope
 
 /**
  * The original game's creature (docs/mechanics.md §6): it doesn't hunt. It attacks crew standing
- * in its location. Otherwise it either wanders to a random neighbouring location, ducts included,
+ * in its location. Otherwise it either wanders to a random neighboring location, ducts included,
  * or lingers where it is (prowls), damaging the room. Dead ends make it linger more.
  *
  * Grilles in place block it like anyone else; finding one, it sets about removing it with

@@ -17,7 +17,7 @@ import org.tadams.nostromo.core.scenario.RoomKind
  * - **Sounds.** Anyone entering a room (not a duct) makes a door sound; removing a grille makes a
  *   grille sound. Both are heard everywhere, as [GameEvent.Noise] with [Visibility.Ship].
  * - **Detectors.** A tracker in use, or a caught animal in its box or net, scans the holder's
- *   neighbouring locations (not their own) for anything alive: crew, the creature, the cat. So it's
+ *   neighboring locations (not their own) for anything alive: crew, the creature, the cat. So it's
  *   a motion detector, not a creature detector. A reading is reported to the holder when it changes,
  *   and an all-clear gives crew in the holder's location [org.tadams.nostromo.core.scenario.Rules.detectorClearMorale].
  *

@@ -73,7 +73,7 @@ private val Mono = FontFamily.Monospace
 /**
  * The game screen:
  * - top: ship status (clock; oxygen and self-destruct once they exist)
- * - middle: log on the left, ship map in the centre, the selected crew member's actions on the right
+ * - middle: log on the left, ship map in the center, the selected crew member's actions on the right
  * - below that: crew tabs
  * - bottom: the selected crew member's surroundings (room; morale and damage once they exist)
  *
@@ -187,7 +187,7 @@ private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) ->
             MonoText("  Time   ${result.rating.time}", Green)
             MonoText("  Total  ${result.rating.total} / ${Rating.MAX}", Amber, bold = true)
             Spacer(Modifier.weight(1f))
-            TerminalButton("NEW GAME", onClick = onRestart, colour = Amber)
+            TerminalButton("NEW GAME", onClick = onRestart, color = Amber)
         }
         Spacer(Modifier.width(8.dp))
         EventLog(ui, onDebug, Modifier.width(400.dp).fillMaxHeight())
@@ -257,33 +257,33 @@ private fun CrewTabs(ui: GameUiState, onSelect: (ActorId) -> Unit) {
             val selected = actor.id == ui.selected
             val condition = condition(actor, ui)
             val down = condition != Condition.UP
-            val colour = when {
+            val color = when {
                 down -> DimGreen
                 selected -> Amber
                 else -> Green
             }
             Column(
                 Modifier
-                    .border(1.dp, colour)
-                    .background(if (selected) colour.copy(alpha = 0.15f) else Color.Transparent)
+                    .border(1.dp, color)
+                    .background(if (selected) color.copy(alpha = 0.15f) else Color.Transparent)
                     .clickable { onSelect(actor.id) }
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .width(110.dp),
             ) {
-                MonoText("${index + 1} ${actor.name}", colour, bold = selected)
-                MonoText(if (down) condition.label() else "HP ${"■".repeat(actor.health)}", colour)
+                MonoText("${index + 1} ${actor.name}", color, bold = selected)
+                MonoText(if (down) condition.label() else "HP ${"■".repeat(actor.health)}", color)
                 // No progress bar for crew who don't answer: the revealed android is still acting, but that's secret.
                 val activity = actor.activity?.takeUnless { down }
                 if (activity != null) {
                     LinearProgressIndicator(
                         progress = { activity.progress },
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
-                        color = colour,
-                        trackColor = colour.copy(alpha = 0.2f),
+                        color = color,
+                        trackColor = color.copy(alpha = 0.2f),
                         drawStopIndicator = {},
                     )
                 } else {
-                    MonoText(if (down) "" else "idle", colour.copy(alpha = 0.6f))
+                    MonoText(if (down) "" else "idle", color.copy(alpha = 0.6f))
                 }
             }
         }
@@ -310,12 +310,12 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
         Spacer(Modifier.height(8.dp))
         // TODO make groups of actions easier to tell apart: today attacks, moves (and later items,
         //  grilles, room specials) are one undifferentiated list of identical buttons. E.g. a small
-        //  header or divider per action type, and/or a distinct colour or icon per group (attacks
+        //  header or divider per action type, and/or a distinct color or icon per group (attacks
         //  amber). The list is already ordered by type (ActionDefs.all), so grouping by
         //  option.action.type is enough.
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(ui.actions) { option ->
-                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, colour = actionColor(option.action))
+                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, color = actionColor(option.action))
             }
         }
     }
@@ -352,9 +352,9 @@ internal class MapView(private val ui: GameUiState) {
     }
 
     // TODO a duct is listed (via shown()) when a crew member who is up is in it, but it's still
-    //  drawn in DimGreen, the colour debug mode uses for hidden entries, so a duct that's
+    //  drawn in DimGreen, the color debug mode uses for hidden entries, so a duct that's
     //  visible because someone is there looks the same as one only debug reveals.
-    fun colour(room: RoomState) = when {
+    fun color(room: RoomState) = when {
         room.id == selectedRoom -> Amber
         room.id in destinations -> Cyan
         room.kind == RoomKind.DUCT -> DimGreen
@@ -381,7 +381,7 @@ private fun ShipMap(ui: GameUiState, modifier: Modifier) {
                 val marker = if (room.id in view.destinations) "> " else "  "
                 val alarms = view.alarms(room)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MonoText("$marker${room.name.padEnd(22)} ${view.names(room)}", view.colour(room))
+                    MonoText("$marker${room.name.padEnd(22)} ${view.names(room)}", view.color(room))
                     if (alarms.isNotEmpty()) MonoText(alarms, Amber, bold = true)
                 }
             }
@@ -420,23 +420,23 @@ private fun EventLog(ui: GameUiState, onDebug: (Boolean) -> Unit, modifier: Modi
     }
 }
 
-/** A rectangular button with an outline and a faded fill in [colour], matching the terminal look. */
+/** A rectangular button with an outline and a faded fill in [color], matching the terminal look. */
 @Composable
-private fun TerminalButton(label: String, onClick: () -> Unit, colour: Color = Green) {
+private fun TerminalButton(label: String, onClick: () -> Unit, color: Color = Green) {
     Box(
         Modifier
             .fillMaxWidth()
-            .border(1.dp, colour, RectangleShape)
-            .background(colour.copy(alpha = 0.12f), RectangleShape)
+            .border(1.dp, color, RectangleShape)
+            .background(color.copy(alpha = 0.12f), RectangleShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        MonoText(label, colour)
+        MonoText(label, color)
     }
 }
 
 /**
- * Action bar colour for [action]: red to attack, cyan to move (matching the destinations on
+ * Action bar color for [action]: red to attack, cyan to move (matching the destinations on
  * the map), purple for the ship's controls and the cat, green otherwise.
  */
 private fun actionColor(action: Action): Color = when (action) {
@@ -448,8 +448,8 @@ private fun actionColor(action: Action): Color = when (action) {
 }
 
 @Composable
-private fun MonoText(text: String, colour: Color, bold: Boolean = false) {
-    Text(text, color = colour, fontFamily = Mono, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+private fun MonoText(text: String, color: Color, bold: Boolean = false) {
+    Text(text, color = color, fontFamily = Mono, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
         style = MaterialTheme.typography.bodySmall)
 }
 

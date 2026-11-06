@@ -60,7 +60,7 @@ class EventText(scenario: Scenario) {
             if (event.movement) "${name(event.holder)}'s ${item(event.item)}: movement nearby" else "${name(event.holder)}'s ${item(event.item)}: all clear"
         is GameEvent.DestructArmed -> "SELF-DESTRUCT ARMED by ${name(event.actor)}"
         is GameEvent.DestructDisarmed -> "Self-destruct overridden by ${name(event.actor)}"
-        is GameEvent.AirlockBlown -> "WARNING: ${room(event.airlock)} depressurised"
+        is GameEvent.AirlockBlown -> "WARNING: ${room(event.airlock)} depressurized"
         is GameEvent.AirlockSealed -> "${room(event.airlock)}: pressure restored"
         is GameEvent.BlownOut -> "${name(event.actor)} is blown out of ${room(event.airlock)}"
         is GameEvent.IntruderEntering -> "INTRUDER ENTERING ${room(event.room)}"

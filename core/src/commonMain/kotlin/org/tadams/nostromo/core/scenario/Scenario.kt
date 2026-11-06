@@ -138,7 +138,7 @@ data class RoomDef(
 /** Special rooms (docs/mechanics.md §3, §7, §10). */
 @Serializable
 enum class RoomFeature {
-    /** Crew here can arm and override the self-destruct. Original: the command centre. */
+    /** Crew here can arm and override the self-destruct. Original: the command center. */
     @SerialName("destructControls") DESTRUCT_CONTROLS,
 
     /** Crew here can blow and seal every [AIRLOCK]. Original: Corridor 6. */
@@ -159,7 +159,7 @@ enum class RoomFeature {
     /** Catches fire at [Rules.fireAtPercent] damage. Original: the three engine rooms. */
     @SerialName("flammable") FLAMMABLE,
 
-    /** A system the ship depends on; a failure warning at [Rules.fireAtPercent] damage. Original: command centre, computer, life support, shuttle bay. */
+    /** A system the ship depends on; a failure warning at [Rules.fireAtPercent] damage. Original: command center, computer, life support, shuttle bay. */
     @SerialName("keySystem") KEY_SYSTEM,
 }
 

@@ -25,7 +25,7 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 
 | | Short game (`AEC2`) | Long game (`A524`) |
 |---|---|---|
-| Crew | 3 (Ripley, Lambert, Parker), all in the command centre | 6 (7 minus the chestburster host) |
+| Crew | 3 (Ripley, Lambert, Parker), all in the command center | 6 (7 minus the chestburster host) |
 | Chestburster | No | Yes: alien hatches from a random crew member (Dallas 5/16, Kane 6/16, Lambert 5/16) |
 | Android | No | Yes: hidden traitor chosen from Dallas, Kane, Ash, Parker (re-rolled if it's the host) |
 
@@ -85,7 +85,7 @@ This document describes how the 1984 Spectrum game works, reverse-engineered fro
 - **Grilles** (`757C`): at the start all are in place except one (Corridor 6). Removing a grille takes time, and the alien removes them too.
 - **Capacity** (`8F03`): a room holds at most **3** people (dead bodies count) and a duct segment holds **1**. Anyone ordered into a full space waits and tries again.
 - **Room damage** (`7536`) goes up in 5% steps:
-  - **30%:** a key room fails (command centre, computer, life support, shuttle bay all send warnings), and an engine room catches **fire**.
+  - **30%:** a key room fails (command center, computer, life support, shuttle bay all send warnings), and an engine room catches **fire**.
   - **70%:** "Structural damage" warning.
   - **100%** in any room: the ship explodes and the game ends.
 - **Airlocks:** from Corridor 6 you can blow either airlock or re-seal it. Blowing one removes everything inside, people included (section 7).
@@ -112,12 +112,12 @@ Each character has an 8-byte record at `737E`; record 0 is the alien.
 | Health (long game) | 6 | 5 | 4 | 5 | 6 | 6 | 5 |
 | Hits to collapse | 5 | 4 | 3 | 4 | 5 | 5 | 4 |
 | Base morale | 4 | 4 | 3 | 4 | 4 | 4 | 3 |
-| Starting room (long game) | Command centre | Command centre | Command centre | Mess | Mess | Mess | Airlock 1 |
+| Starting room (long game) | Command center | Command center | Command center | Mess | Mess | Mess | Airlock 1 |
 | Can be chestburster host (`A19E`) | yes (5/16) | yes (6/16) | – | – | yes (5/16) | – | – |
 | Can be the android (`A1AE`) | yes | yes | – | yes | – | yes | – |
 | In the short game | – | – | health 4, morale 3 | – | **health 4**, morale 3 | health 6, morale 4 | – |
 
-- In the short game, all three crew start in the command centre, and Lambert starts weaker (health 4 rather than 6).
+- In the short game, all three crew start in the command center, and Lambert starts weaker (health 4 rather than 6).
 - After the chestburster host is removed, Brett is moved to the host's old room (`73B7`). The reason is unclear.
 - The other per-character stats (speed penalty, grille removal time, cat-catching difficulty) are in the table in §2.
 - **Health never recovers.** There is no healing code.
@@ -151,7 +151,7 @@ So company of brave crew lifts morale, and company of frightened crew drags it d
 **Labels:** 0 Broken, 1 Shaken, 2 Uneasy, 3 Stable, 4+ Confident.
 
 **Obedience gate** (`8EE3`), checked when a crew member's order is about to happen. Crew with no order are never checked, so a Broken crew member left alone just stands still, even under attack. Panic happens only when you give them an order.
-- **Morale 0 (Broken):** the character panics. They drop everything, run to a random neighbouring room and ignore the order.
+- **Morale 0 (Broken):** the character panics. They drop everything, run to a random neighboring room and ignore the order.
 - **Morale below 2:** won't attack and won't enter or travel ducts.
 - **Health below 2:** can't attack.
 - **Android after it's revealed:** can no longer be selected or ordered.
@@ -187,7 +187,7 @@ It walks more slowly than any healthy crew member, but gets through grilles 1.6�
   - Below 2 health the victim collapses and becomes a body, and their items drop.
   - If the chosen victim is already a body, there is a 4/16 chance the alien drags it away and it disappears.
 - **Taking damage:** it dies at **15 damage**. Hits after the first can scare it off (section 7).
-- **Senses:** none are modelled. It doesn't track sound or the scent of crew.
+- **Senses:** none are modeled. It doesn't track sound or the scent of crew.
 
 ## 7. Combat
 
@@ -210,7 +210,7 @@ score = Σ over attackers in good health (health > 2):
           (+1 if Confident) + (alien damage ÷ 4)
 ```
 
-- The alien flees with chance `score/16`, and never on a roll of 15. It jumps straight to a random neighbouring room.
+- The alien flees with chance `score/16`, and never on a roll of 15. It jumps straight to a random neighboring room.
 - Each attacker then gains +1 base morale.
 - Examples: one Confident attacker against a fresh alien: 1/16. Three Confident attackers against an alien with 8 damage: 9/16.
 - **Unarmed attacks do nothing** (`92D0`): with no item in use the attack exits before any damage or message.
@@ -244,13 +244,13 @@ score = Σ over attackers in good health (health > 2):
 - **Tracker beep:** the selected crew member is holding a tracker and something is in an adjacent room.
 
 **Tracker** (`97F7`):
-- It scans the holder's 5 neighbouring rooms (duct neighbours if the holder is in a duct), but not the holder's own room.
+- It scans the holder's 5 neighboring rooms (duct neighbors if the holder is in a duct), but not the holder's own room.
 - It detects **anything alive**, including crew and the cat. So it is a motion detector, not an alien detector.
 - An "all clear" reading gives +1 morale to crew in the holder's room.
 
 **Jones the cat:**
 - **Detector:** a captured cat in a box or net works as a second detector ("Jones is looking uneasy").
-- **Movement** (`8FFB`): every 255 ticks he moves to a random neighbouring room. He never uses ducts, and he moves again straight away if he lands with the alien.
+- **Movement** (`8FFB`): every 255 ticks he moves to a random neighboring room. He never uses ducts, and he moves again straight away if he lands with the alien.
 - **Catching him** (`8C05`): needs the box or the net in use. You succeed if a roll of 0–15 is at least the character's difficulty (table in section 2).
   - With the box: 1–3 chances in 16.
   - The net lowers the difficulty by 4.
@@ -274,7 +274,7 @@ score = Σ over attackers in good health (health > 2):
 - **Bug:** the count of fire-fighting attempts is never reset, so a later fire in the same room may go out at once.
 
 **Self-destruct:**
-- "Scuttle Nostromo" in the command centre starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all, or about **7.4 real minutes** at the measured rate.
+- "Scuttle Nostromo" in the command center starts a **5:00** clock. Each "second" takes 20 ticks, so 6000 ticks in all, or about **7.4 real minutes** at the measured rate.
 - "Override" stops it and resets it to 5:00, and you can re-arm it any number of times.
 - If it reaches zero, the ship explodes.
 

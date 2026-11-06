@@ -1,6 +1,6 @@
 # Proto: a generated visual map
 
-Not scheduled. The screen's centre today is a text list of rooms by deck (`ShipMap` in `shared/.../game/GameScreen.kt`). This is a sketch of a real Canvas map, kept for later.
+Not scheduled. The screen's center today is a text list of rooms by deck (`ShipMap` in `shared/.../game/GameScreen.kt`). This is a sketch of a real Canvas map, kept for later.
 
 ## Goal
 
@@ -15,7 +15,7 @@ A pure function from `Scenario` to positions, run once at load. It's determinist
 1. **Decks become bands.** Each deck gets its own horizontal strip. Rooms with no deck go in a strip of their own.
 2. **Rooms snap to a grid within their deck.**
    - Start from the room with the most links and walk outwards breadth-first.
-   - Each neighbour goes in the nearest free grid cell next to the room it was reached from.
+   - Each neighbor goes in the nearest free grid cell next to the room it was reached from.
    - On a map shaped like a ship's corridors, this gives tidy boxes joined by short straight lines.
 3. **Ducts sit under their room.**
    - Draw each duct segment as a small marker below or beside its room, not as a full room on the map.
