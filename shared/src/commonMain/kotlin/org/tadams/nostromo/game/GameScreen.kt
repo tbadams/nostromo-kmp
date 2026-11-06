@@ -386,7 +386,7 @@ private fun tabColor(down: Boolean, selected: Boolean) = when {
 
 /**
  * [CrewTabs] for a narrow screen: seven equal chips across the width, each its tab number and the
- * first letters of the name, health as squares (or a short condition), and a progress bar while busy.
+ * first letters of the name, health as "HP:5" (or a short condition), and a progress bar while busy.
  */
 @Composable
 private fun CrewChips(ui: GameUiState, onSelect: (ActorId) -> Unit) {
@@ -407,7 +407,7 @@ private fun CrewChips(ui: GameUiState, onSelect: (ActorId) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 MonoText("${index + 1} ${actor.name.take(3).uppercase()}", color, bold = selected, maxLines = 1)
-                MonoText(if (down) condition.shortLabel() else "■".repeat(actor.health), color, maxLines = 1)
+                MonoText(if (down) condition.shortLabel() else "HP:${actor.health}", color, maxLines = 1)
                 // As on the wide tabs: no progress bar for crew who don't answer.
                 actor.activity?.takeUnless { down }?.let { activity ->
                     LinearProgressIndicator(
