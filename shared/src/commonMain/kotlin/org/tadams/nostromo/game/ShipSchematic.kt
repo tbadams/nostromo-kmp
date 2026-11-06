@@ -51,6 +51,10 @@ import org.tadams.nostromo.ui.Green
  * same as its button in the action bar. Tapping any other room or duct with crew in it, bar the
  * selected crew member's own, selects the first of them.
  */
+/** Room box fill strength: faint when nobody's visibly there, stronger when someone is. */
+private const val EMPTY_FILL = 0.12f
+private const val OCCUPIED_FILL = 0.28f
+
 @Composable
 internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, onSelect: (ActorId) -> Unit, modifier: Modifier) {
     val layout = remember(ui.scenario) { layoutMap(ui.scenario) }
@@ -146,9 +150,11 @@ private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapVie
     val colour = view.colour(room)
     val topLeft = centre - Offset(geometry.boxSize.width / 2, geometry.boxSize.height / 2)
     val selected = room.id == view.selectedRoom
+    val names = view.names(room)
     // An opaque base under the faded fill, so lines stop at the box's edge rather than showing through it.
     drawRect(Background, topLeft, geometry.boxSize)
-    drawRect(colour.copy(alpha = 0.12f), topLeft, geometry.boxSize)
+    // A stronger fill where someone is visibly there, so occupied rooms stand out at a glance.
+    drawRect(colour.copy(alpha = if (names.isNotEmpty()) OCCUPIED_FILL else EMPTY_FILL), topLeft, geometry.boxSize)
     drawRect(colour, topLeft, geometry.boxSize, style = Stroke((if (selected) 2 else 1).dp.toPx()))
 
     val inset = 3.dp.toPx()
@@ -157,7 +163,6 @@ private fun DrawScope.drawRoom(room: RoomState, geometry: Geometry, view: MapVie
     val nameLine = drawLabel(measurer, marker + room.name, topLeft + Offset(inset, inset), colour, bold = selected, maxWidth = textWidth)
 
     val alarms = view.alarms(room)
-    val names = view.names(room)
     if (alarms.isEmpty() && names.isEmpty()) return
     val second = buildAnnotatedString {
         if (alarms.isNotEmpty()) withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) { append("$alarms ") }
