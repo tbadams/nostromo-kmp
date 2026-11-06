@@ -5,8 +5,11 @@ import androidx.compose.ui.graphics.Color
 /** The terminal palette: green phosphor on near-black, amber for emphasis. */
 internal val Green = Color(0xFF33FF66)
 
-/** Lighter than [Green], for highlights such as where the selected crew member can move. */
-internal val LightGreen = Color(0xFFB3FFC6)
+/**
+ * Where the selected crew member can move, on the map and the Move buttons. A different hue from
+ * [Green], not just a lighter one, so it stands out from ordinary rooms.
+ */
+internal val Cyan = Color(0xFF4DD9FF)
 internal val DimGreen = Color(0xFF1A7F33)
 internal val Amber = Color(0xFFFFB000)
 

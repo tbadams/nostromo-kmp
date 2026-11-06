@@ -47,7 +47,7 @@ import org.tadams.nostromo.ui.Green
  * room for its duct segment, laid out by [layoutMap] (docs/proto-map.md). Shows the same things as
  * the text list ([MapView]), in the same colours.
  *
- * Tapping where the selected crew member can move (a light green room or duct) orders the move, the
+ * Tapping where the selected crew member can move (a cyan room or duct) orders the move, the
  * same as its button in the action bar. Tapping any other room or duct with crew in it, bar the
  * selected crew member's own, selects the first of them.
  */
@@ -67,8 +67,8 @@ internal fun ShipSchematic(ui: GameUiState, onOrder: (Action) -> Unit, onSelect:
             detectTapGestures { tap ->
                 val geometry = Geometry(layout, size.toSize(), labelHeight = 16.dp.toPx())
                 val minTarget = 24.dp.toPx()
-                // Only the light green places, and only as moves on offer right now, so a tap can't order
-                // anything the action bar wouldn't. (Through an open grille is offered but not light green.)
+                // Only the cyan places, and only as moves on offer right now, so a tap can't order
+                // anything the action bar wouldn't. (Through an open grille is offered but not cyan.)
                 val tapView = MapView(currentUi)
                 val move = currentUi.actions.map { it.action }.filterIsInstance<Action.Move>()
                     .filter { it.to in tapView.destinations }

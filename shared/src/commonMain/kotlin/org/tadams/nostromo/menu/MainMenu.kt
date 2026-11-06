@@ -126,7 +126,7 @@ private val PAGES = listOf(
         "Most actions take time; a bar under their tab shows progress. A new order replaces the current one. Esc cancels it.",
         "",
         "# Moving",
-        "On the map, light green rooms are where the selected crew member can go next. Click one, or use its Move button.",
+        "On the map, cyan rooms are where the selected crew member can go next. Click one, or use its Move button.",
         "",
         "# Morale",
         "Frightened crew may refuse to fight or crawl into the ducts. At their lowest they panic: they drop everything and run.",

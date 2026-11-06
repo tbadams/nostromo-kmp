@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.Key
@@ -63,7 +64,7 @@ import org.tadams.nostromo.ui.Amber
 import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.DimGreen
 import org.tadams.nostromo.ui.Green
-import org.tadams.nostromo.ui.LightGreen
+import org.tadams.nostromo.ui.Cyan
 import org.tadams.nostromo.ui.Purple
 import org.tadams.nostromo.ui.Red
 
@@ -92,6 +93,8 @@ fun GameScreen(viewModel: GameViewModel, onRestart: () -> Unit) {
             .background(Background)
             .safeContentPadding()
             .padding(8.dp)
+            // Take focus back if a focused button disappears (e.g. Move, once arrived), or keys stop working.
+            .onFocusChanged { if (!it.hasFocus) focus.requestFocus() }
             .focusRequester(focus)
             .focusable()
             .onKeyEvent { event -> event.type == KeyEventType.KeyDown && handleKey(event.key, event.isShiftPressed, viewModel) },
@@ -353,7 +356,7 @@ internal class MapView(private val ui: GameUiState) {
     //  visible because someone is there looks the same as one only debug reveals.
     fun colour(room: RoomState) = when {
         room.id == selectedRoom -> Amber
-        room.id in destinations -> LightGreen
+        room.id in destinations -> Cyan
         room.kind == RoomKind.DUCT -> DimGreen
         else -> Green
     }
@@ -433,12 +436,12 @@ private fun TerminalButton(label: String, onClick: () -> Unit, colour: Color = G
 }
 
 /**
- * Action bar colour for [action]: red to attack, light green to move (matching the destinations on
+ * Action bar colour for [action]: red to attack, cyan to move (matching the destinations on
  * the map), purple for the ship's controls and the cat, green otherwise.
  */
 private fun actionColor(action: Action): Color = when (action) {
     is Action.Attack -> Red
-    is Action.Move -> LightGreen
+    is Action.Move -> Cyan
     is Action.Catch, Action.ArmDestruct, Action.DisarmDestruct, is Action.BlowAirlock, is Action.SealAirlock,
     Action.Hypersleep, Action.Launch, Action.FightFire -> Purple
     else -> Green
