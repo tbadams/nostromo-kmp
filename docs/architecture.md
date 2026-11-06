@@ -223,7 +223,11 @@ Worth doing, but not needed for the hack.
 - TODO **Typewriter effect** for the end-of-game report and new log lines: text appears a character at a time, as on a terminal.
 - TODO **Center the end-of-game report text** (`EndScreen` in `game/GameScreen.kt`); today it's left-aligned.
 - TODO **Spacing the cat loses the game, immediately.** Today a cat blown out of an airlock (loose, or caught in an item inside) is just gone, and since launch only waits for animals still in play, it's a shortcut past catching it. Make it a new `Ending` in `EndSystem`, with its own ending text and a rating of 0.
-- TODO **Android and mobile web support.** The screen is laid out for a wide desktop window (fixed 400dp log, 240dp action bar) and keyboard shortcuts. Phones need a narrow layout and touch-sized targets.
+- **Android and mobile web support.** Prototype: below 600dp wide, `GameScreen` switches to `CompactGame` (portrait: the map on top, scrolling so rooms stay at least 48dp tall; crew chips; a two-line log ticker that opens the full log; a grid of action buttons, without moves to cyan rooms since tapping the room does that).
+  - TODO try it on a real phone and tune: map cell height, text size (10sp in room boxes is small), how many action rows fit.
+  - TODO landscape phones: under 600dp tall, the wide layout gets a squashed map. Needs its own arrangement, or a lock to portrait.
+  - TODO the menu and instructions screens on phones; the end screen hides the log when narrow.
+  - TODO check the game pauses when the app goes to the background (`GameViewModel.pause()`).
 - "Jumpscare" screen when alien present, like in original
 - Crew should refuse to enter airlock room altogether when it is blown, not agree to then end up in c6 again.
 - Difficulty/a11y options like toggling off 02 consumption or changing value

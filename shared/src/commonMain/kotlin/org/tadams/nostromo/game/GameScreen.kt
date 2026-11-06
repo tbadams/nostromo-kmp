@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,11 +14,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +50,8 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.tadams.nostromo.core.ActorState
@@ -70,12 +77,13 @@ import org.tadams.nostromo.ui.Red
 
 private val Mono = FontFamily.Monospace
 
+/** Narrower than this (phones in portrait, a narrow window), the screen uses [CompactGame]. */
+private val COMPACT_WIDTH = 600.dp
+
 /**
- * The game screen:
- * - top: ship status (clock; oxygen and self-destruct once they exist)
- * - middle: log on the left, ship map in the center, the selected crew member's actions on the right
- * - below that: crew tabs
- * - bottom: the selected crew member's surroundings (room; morale and damage once they exist)
+ * The game screen: ship status along the top, then the game laid out for the space there is.
+ * Wide ([WideGame]): log, map and actions side by side. Narrow ([CompactGame]): map on top, the
+ * rest stacked below.
  *
  * Keys: 1-9 select crew, Tab / Shift+Tab (or [ and ]) cycle, Esc cancels the current order.
  * [onRestart] starts a new game, from the end-of-game report.
@@ -87,35 +95,46 @@ fun GameScreen(viewModel: GameViewModel, onRestart: () -> Unit) {
     LaunchedEffect(Unit) { focus.requestFocus() }
     var schematic by remember { mutableStateOf(true) }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Background)
-            .safeContentPadding()
-            .padding(8.dp)
-            // Take focus back if a focused button disappears (e.g. Move, once arrived), or keys stop working.
-            .onFocusChanged { if (!it.hasFocus) focus.requestFocus() }
-            .focusRequester(focus)
-            .focusable()
-            .onKeyEvent { event -> event.type == KeyEventType.KeyDown && handleKey(event.key, event.isShiftPressed, viewModel) },
-    ) {
-        StatusBar(ui, Modifier.fillMaxWidth())
-        Spacer(Modifier.height(8.dp))
-        val result = ui.game.result
-        if (result != null) {
-            EndScreen(ui, result, viewModel::setDebug, onRestart, Modifier.weight(1f).fillMaxWidth())
-            return@Column
+    BoxWithConstraints(Modifier.fillMaxSize().background(Background)) {
+        val compact = maxWidth < COMPACT_WIDTH
+        val gap = if (compact) 4.dp else 8.dp
+        Column(
+            Modifier
+                .fillMaxSize()
+                .safeContentPadding()
+                .padding(gap)
+                // Take focus back if a focused button disappears (e.g. Move, once arrived), or keys stop working.
+                .onFocusChanged { if (!it.hasFocus) focus.requestFocus() }
+                .focusRequester(focus)
+                .focusable()
+                .onKeyEvent { event -> event.type == KeyEventType.KeyDown && handleKey(event.key, event.isShiftPressed, viewModel) },
+        ) {
+            StatusBar(ui, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(gap))
+            val result = ui.game.result
+            val rest = Modifier.weight(1f).fillMaxWidth()
+            when {
+                result != null -> EndScreen(ui, result, viewModel::setDebug, onRestart, showLog = !compact, rest)
+                compact -> CompactGame(ui, viewModel, schematic, { schematic = !schematic }, rest)
+                else -> WideGame(ui, viewModel, schematic, { schematic = !schematic }, rest)
+            }
         }
+    }
+}
+
+/**
+ * The game on a wide screen:
+ * - middle: log on the left, ship map in the center, the selected crew member's actions on the right
+ * - below that: crew tabs
+ * - bottom: the selected crew member's surroundings
+ */
+@Composable
+private fun WideGame(ui: GameUiState, viewModel: GameViewModel, schematic: Boolean, onToggleMap: () -> Unit, modifier: Modifier) {
+    Column(modifier) {
         Row(Modifier.weight(1f).fillMaxWidth()) {
             EventLog(ui, viewModel::setDebug, Modifier.width(400.dp).fillMaxHeight())
             Spacer(Modifier.width(8.dp))
-            // The schematic (docs/proto-map.md) or the text list, switched with the label in the corner.
-            Box(Modifier.weight(1f).fillMaxHeight()) {
-                if (schematic) ShipSchematic(ui, viewModel::order, viewModel::select, Modifier.fillMaxSize()) else ShipMap(ui, Modifier.fillMaxSize())
-                Box(Modifier.align(Alignment.TopEnd).clickable { schematic = !schematic }.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                    MonoText(if (schematic) "[LIST]" else "[MAP]", Green)
-                }
-            }
+            MapPanel(ui, viewModel, schematic, onToggleMap, Modifier.weight(1f).fillMaxHeight())
             Spacer(Modifier.width(8.dp))
             ActionBar(ui, viewModel, Modifier.width(240.dp).fillMaxHeight())
         }
@@ -123,6 +142,42 @@ fun GameScreen(viewModel: GameViewModel, onRestart: () -> Unit) {
         CrewTabs(ui, viewModel::select)
         Spacer(Modifier.height(8.dp))
         BottomBar(ui, Modifier.fillMaxWidth())
+    }
+}
+
+/**
+ * The game on a narrow screen, e.g. a phone in portrait:
+ * - the map, taking what space is left; it scrolls, so room boxes stay big enough to tap and read
+ * - crew as compact chips
+ * - the last two log lines; tap them to swap the map for the full log
+ * - the selected crew member's state and actions, as a grid of buttons. Moves to cyan rooms are
+ *   left out, since tapping the room does that; everything else, attacks included, is always there.
+ */
+@Composable
+private fun CompactGame(ui: GameUiState, viewModel: GameViewModel, schematic: Boolean, onToggleMap: () -> Unit, modifier: Modifier) {
+    var logOpen by remember { mutableStateOf(false) }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        val top = Modifier.weight(1f).fillMaxWidth()
+        if (logOpen) EventLog(ui, viewModel::setDebug, top)
+        else MapPanel(ui, viewModel, schematic, onToggleMap, top, minCellHeight = 48.dp)
+        CrewChips(ui, viewModel::select)
+        LogTicker(ui, logOpen, onToggle = { logOpen = !logOpen })
+        CompactActions(ui, viewModel, Modifier.fillMaxWidth().heightIn(max = 260.dp))
+    }
+}
+
+/** The map: the schematic (docs/proto-map.md) or the text list, switched with the label in the corner. */
+@Composable
+private fun MapPanel(
+    ui: GameUiState, viewModel: GameViewModel, schematic: Boolean, onToggle: () -> Unit, modifier: Modifier,
+    minCellHeight: Dp = 0.dp,
+) {
+    Box(modifier) {
+        if (schematic) ShipSchematic(ui, viewModel::order, viewModel::select, Modifier.fillMaxSize(), minCellHeight)
+        else ShipMap(ui, Modifier.fillMaxSize())
+        Box(Modifier.align(Alignment.TopEnd).clickable(onClick = onToggle).padding(horizontal = 8.dp, vertical = 4.dp)) {
+            MonoText(if (schematic) "[LIST]" else "[MAP]", Green)
+        }
     }
 }
 
@@ -166,7 +221,9 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
  * at the bottom starts a new game.
  */
 @Composable
-private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) -> Unit, onRestart: () -> Unit, modifier: Modifier) {
+private fun EndScreen(
+    ui: GameUiState, result: GameResult, onDebug: (Boolean) -> Unit, onRestart: () -> Unit, showLog: Boolean, modifier: Modifier,
+) {
     fun names(ids: List<ActorId>) = ids.joinToString { ui.game.actor(it).name }.ifEmpty { "none" }
     val asleep = ui.game.actors.filter { it.asleep }.map { it.id }
     Row(modifier) {
@@ -189,8 +246,11 @@ private fun EndScreen(ui: GameUiState, result: GameResult, onDebug: (Boolean) ->
             Spacer(Modifier.weight(1f))
             TerminalButton("NEW GAME", onClick = onRestart, color = Amber)
         }
-        Spacer(Modifier.width(8.dp))
-        EventLog(ui, onDebug, Modifier.width(400.dp).fillMaxHeight())
+        // No room for the log beside the report on a narrow screen.
+        if (showLog) {
+            Spacer(Modifier.width(8.dp))
+            EventLog(ui, onDebug, Modifier.width(400.dp).fillMaxHeight())
+        }
     }
 }
 
@@ -257,11 +317,7 @@ private fun CrewTabs(ui: GameUiState, onSelect: (ActorId) -> Unit) {
             val selected = actor.id == ui.selected
             val condition = condition(actor, ui)
             val down = condition != Condition.UP
-            val color = when {
-                down -> DimGreen
-                selected -> Amber
-                else -> Green
-            }
+            val color = tabColor(down, selected)
             Column(
                 Modifier
                     .border(1.dp, color)
@@ -316,6 +372,116 @@ private fun ActionBar(ui: GameUiState, viewModel: GameViewModel, modifier: Modif
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             items(ui.actions) { option ->
                 TerminalButton(option.label, onClick = { viewModel.order(option.action) }, color = actionColor(option.action))
+            }
+        }
+    }
+}
+
+/** A crew tab's color: dim for crew who are down or don't answer, amber for the selected one. */
+private fun tabColor(down: Boolean, selected: Boolean) = when {
+    down -> DimGreen
+    selected -> Amber
+    else -> Green
+}
+
+/**
+ * [CrewTabs] for a narrow screen: seven equal chips across the width, each its tab number and the
+ * first letters of the name, health as squares (or a short condition), and a progress bar while busy.
+ */
+@Composable
+private fun CrewChips(ui: GameUiState, onSelect: (ActorId) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        ui.game.actors.filter { it.kind == ActorKind.CREW }.forEachIndexed { index, actor ->
+            val selected = actor.id == ui.selected
+            val condition = condition(actor, ui)
+            val down = condition != Condition.UP
+            val color = tabColor(down, selected)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .border(1.dp, color)
+                    .background(if (selected) color.copy(alpha = 0.15f) else Color.Transparent)
+                    .clickable { onSelect(actor.id) }
+                    .padding(3.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MonoText("${index + 1} ${actor.name.take(3).uppercase()}", color, bold = selected, maxLines = 1)
+                MonoText(if (down) condition.shortLabel() else "■".repeat(actor.health), color, maxLines = 1)
+                // As on the wide tabs: no progress bar for crew who don't answer.
+                actor.activity?.takeUnless { down }?.let { activity ->
+                    LinearProgressIndicator(
+                        progress = { activity.progress },
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                        color = color,
+                        trackColor = color.copy(alpha = 0.2f),
+                        drawStopIndicator = {},
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The last two log lines; tapping swaps the map for the full log, and back. */
+@Composable
+private fun LogTicker(ui: GameUiState, open: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 48.dp).border(1.dp, DimGreen).clickable(onClick = onToggle).padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            ui.log.takeLast(2).forEach { entry ->
+                MonoText("${clock(entry.tick)}  ${entry.text}", if (entry.hidden) DimGreen else Green, maxLines = 1)
+            }
+        }
+        MonoText(if (open) "[MAP]" else "[LOG]", Green)
+    }
+}
+
+/**
+ * [ActionBar] and [BottomBar] together for a narrow screen: who's selected and where, their state,
+ * then their actions as a two-column grid of touch-sized buttons. Moves to the map's cyan rooms are
+ * left out (tap the room); moves through an open grille aren't cyan on the map, so they stay.
+ */
+@Composable
+private fun CompactActions(ui: GameUiState, viewModel: GameViewModel, modifier: Modifier) {
+    val actor = ui.selected?.let(ui.game::actor)
+    Column(modifier.border(1.dp, DimGreen).padding(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (actor == null) return@Column
+        val condition = condition(actor, ui)
+        if (condition != Condition.UP) {
+            MonoText("${actor.name}  ${condition.label()}", Amber, bold = true)
+            return@Column
+        }
+        val room = ui.game.room(actor.room)
+        MonoText("${actor.name} · ${room.name}", Amber, bold = true, maxLines = 1)
+        val held = listOfNotNull(
+            actor.inUse?.let { "${ui.game.item(it).name} (in use)" },
+            actor.carried?.let { ui.game.item(it).name },
+        ).joinToString().ifEmpty { "nothing" }
+        val morale = actor.morale?.let { " · morale ${EventText.morale(it)}" }.orEmpty()
+        MonoText("HP ${actor.health}$morale · holding $held", Green, maxLines = 2)
+        val here = listOfNotNull(
+            "damage ${room.damagePercent}%".takeIf { room.kind == RoomKind.ROOM },
+            room.grilleRemoved?.let { if (it) "grille off" else "grille in place" },
+        )
+        if (here.isNotEmpty()) MonoText(here.joinToString(" · "), Green, maxLines = 1)
+        val activity = actor.activity
+        if (activity != null) MonoText("Busy: ${actionText(activity.action, ui.game)}", Green, maxLines = 1)
+
+        val tappable = MapView(ui).destinations
+        val actions = ui.actions.filterNot { (it.action as? Action.Move)?.to in tappable }
+        val button = Modifier.heightIn(min = 48.dp)
+        LazyVerticalGrid(
+            GridCells.Fixed(2),
+            Modifier.weight(1f, fill = false),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (activity != null) item { TerminalButton("Stop", onClick = viewModel::cancel, modifier = button) }
+            gridItems(actions) { option ->
+                TerminalButton(option.label, onClick = { viewModel.order(option.action) }, color = actionColor(option.action), modifier = button)
             }
         }
     }
@@ -422,14 +588,15 @@ private fun EventLog(ui: GameUiState, onDebug: (Boolean) -> Unit, modifier: Modi
 
 /** A rectangular button with an outline and a faded fill in [color], matching the terminal look. */
 @Composable
-private fun TerminalButton(label: String, onClick: () -> Unit, color: Color = Green) {
+private fun TerminalButton(label: String, onClick: () -> Unit, color: Color = Green, modifier: Modifier = Modifier) {
     Box(
-        Modifier
+        modifier
             .fillMaxWidth()
             .border(1.dp, color, RectangleShape)
             .background(color.copy(alpha = 0.12f), RectangleShape)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
+        contentAlignment = Alignment.CenterStart,
     ) {
         MonoText(label, color)
     }
@@ -448,9 +615,9 @@ private fun actionColor(action: Action): Color = when (action) {
 }
 
 @Composable
-private fun MonoText(text: String, color: Color, bold: Boolean = false) {
+private fun MonoText(text: String, color: Color, bold: Boolean = false, maxLines: Int = Int.MAX_VALUE) {
     Text(text, color = color, fontFamily = Mono, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
-        style = MaterialTheme.typography.bodySmall)
+        style = MaterialTheme.typography.bodySmall, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
 }
 
 /** What the player can tell about a crew member's condition. */
@@ -469,6 +636,15 @@ internal fun condition(actor: ActorState, ui: GameUiState) = when {
     actor.isDown -> if (actor.kind != ActorKind.CREW || actor.bodyFound || ui.debug) Condition.DOWN else Condition.NO_RESPONSE
     actor.kind == ActorKind.CREW && !actor.takesOrders -> Condition.NO_RESPONSE
     else -> Condition.UP
+}
+
+/** [label], short enough for a [CrewChips] chip. */
+private fun Condition.shortLabel() = when (this) {
+    Condition.UP -> ""
+    Condition.DOWN -> "DOWN"
+    Condition.NO_RESPONSE -> "N/R"
+    Condition.ASLEEP -> "SLEEP"
+    Condition.LOST -> "LOST"
 }
 
 private fun Condition.label() = when (this) {
