@@ -153,7 +153,7 @@ private fun StatusBar(ui: GameUiState, modifier: Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MonoText("TIME ${clock(ui.game.tick)}", Green, bold = true)
-        MonoText("O2 ${ship.oxygen.toString().padStart(4, '0')}", if (ship.oxygenCritical) Amber else Green, bold = ship.oxygenCritical)
+        MonoText("O2 ${ship.oxygen.toString().padStart(4, '0')}", if (ship.oxygenCritical) Amber else Cyan, bold = ship.oxygenCritical)
         ship.destructTicksLeft?.let { MonoText("DESTRUCT ${Time.clock(it)}", Amber, bold = true) }
         Spacer(Modifier.weight(1f))
         ui.game.result?.let { MonoText(ui.endingText, Amber, bold = true) }

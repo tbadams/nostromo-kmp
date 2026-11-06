@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.Color
 internal val Green = Color(0xFF33FF66)
 
 /**
- * Where the selected crew member can move, on the map and the Move buttons. A different hue from
- * [Green], not just a lighter one, so it stands out from ordinary rooms.
+ * Where the selected crew member can move, on the map and the Move buttons, and the oxygen counter.
+ * A different hue from [Green], not just a lighter one, so it stands out from ordinary rooms.
  */
 internal val Cyan = Color(0xFF4DD9FF)
 internal val DimGreen = Color(0xFF1A7F33)
