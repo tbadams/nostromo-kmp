@@ -26,4 +26,17 @@ class OriginalScenarioTest {
         sim.runTicks(10 * 60 * 10) // ten minutes of game time
         assertTrue(sim.tick >= 1)
     }
+
+    /** The short game: the original's three-crew game, all in the command center, no hidden roles. */
+    @Test
+    fun shortGameLoadsAndPlays() {
+        val short = ScenarioLoader.fromJson(File(file.parentFile, "short.json").readText())
+        assertEquals(emptyList(), ScenarioValidator.problems(short))
+        val crew = short.actors.filter { it.kind == org.tadams.nostromo.core.scenario.ActorKind.CREW }
+        assertEquals(listOf("Roby", "Melkonis", "Hunter"), crew.map { it.name })
+        assertTrue(crew.all { it.room.value == "command-center" })
+        val sim = Simulation(short, seed = 1)
+        sim.runTicks(10 * 60 * 10)
+        assertTrue(sim.tick >= 1)
+    }
 }

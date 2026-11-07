@@ -95,6 +95,11 @@ data class Rules(
     /** Oxygen at the start, in the original's units. The thousands digit scores TIM. Original: 7500. */
     val oxygenStart: Int = 7500,
     /**
+     * Whether crew use oxygen at all. Off, it stays at [oxygenStart] all game: it never warns and
+     * never runs out. Original: on.
+     */
+    val oxygenUsed: Boolean = true,
+    /**
      * Oxygen each breathing crew member (up, loyal, not in hypersleep) uses per second. Differs from
      * the original, whose rate was fastest with exactly one crew member missing (a bug). 1.13 gives a
      * crew of six about the original long game's 18.5 minutes, and longer as crew are lost.

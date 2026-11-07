@@ -147,6 +147,16 @@ class ShipTest {
         assertEquals(0, result.rating.total, "not armed: 0")
     }
 
+    @Test
+    fun oxygenOffNeverRunsOut() {
+        val off = Rules(actionSeconds = mapOf(ActionType.MOVE to 5.0), oxygenStart = 5, oxygenUsed = false)
+        val sim = Simulation(scenario(rules = off), Fixed(15))
+        sim.runTicks(100)
+        assertNull(sim.result, "no oxygen ending with oxygen off")
+        assertEquals(5, sim.state().ship.oxygen, "stays at the start value")
+        assertFalse(sim.state().ship.oxygenCritical, "never critical, though under oxygenCriticalAt")
+    }
+
     // ---- Airlocks
 
     @Test

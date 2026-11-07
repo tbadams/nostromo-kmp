@@ -81,7 +81,7 @@ data class GameState(
             items = world.items.values.filterNot { it.destroyed }.map { ItemState(it.id, it.type.name, it.room, it.charges) },
             ship = ShipState(
                 oxygen = world.ship.oxygen.toInt(),
-                oxygenCritical = world.ship.oxygen <= rules.oxygenCriticalAt,
+                oxygenCritical = rules.oxygenUsed && world.ship.oxygen <= rules.oxygenCriticalAt,
                 destructTicksLeft = world.ship.destructTicksLeft,
             ),
         )

@@ -139,7 +139,8 @@ Today each event maps to zero or one log line, decided on its own with no memory
 - **Validation on load:** the map is connected and every reference resolves. nostromo-js already checked connectivity.
 - **Randomizer:** a function from (base scenario, seed) to a scenario, which shuffles crew stats, roles, item placement and so on.
 - **Where files live:**
-  - The bundled scenarios go in `:shared` as Compose resources (`composeResources/files/scenarios/*.json`). The UI loads one and hands it to `:core`.
+  - The bundled scenarios go in `:shared` as Compose resources (`composeResources/files/scenarios/*.json`): `original.json` (the original's long game) and `short.json` (its short game: three crew, no hidden roles), both from `tools/make_scenario.py`. Resources can't be listed at runtime, so `BUNDLED_SCENARIOS` (`game/GameConfig.kt`) names them, and a test checks it matches the folder.
+  - The Custom Game screen picks one and can override its starting oxygen or switch oxygen off (`Rules.oxygenUsed`). The choice is a `GameConfig`, applied to the scenario before it goes to `:core`; New Game on the end screen reuses it.
   - `:core` tests build small scenarios in code with a builder.
 
 ## Package layout (`:core`, `org.tadams.nostromo.core`)

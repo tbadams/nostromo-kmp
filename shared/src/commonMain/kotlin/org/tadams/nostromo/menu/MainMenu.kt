@@ -20,29 +20,38 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import org.tadams.nostromo.core.scenario.Scenario
+import org.tadams.nostromo.game.GameConfig
 import org.tadams.nostromo.ui.Amber
 import org.tadams.nostromo.ui.Background
 import org.tadams.nostromo.ui.DimGreen
 import org.tadams.nostromo.ui.Green
+import org.tadams.nostromo.ui.Red
 
-/** The first screen: start a game, or read how to play. */
+/** The first screen: start the default game, set up a custom one, or read how to play. */
 @Composable
-fun MainMenu(onStart: () -> Unit, onInstructions: () -> Unit) {
+fun MainMenu(onStart: () -> Unit, onCustom: () -> Unit, onInstructions: () -> Unit) {
     Screen {
         Column(
             Modifier.align(Alignment.Center).width(320.dp),
@@ -52,6 +61,7 @@ fun MainMenu(onStart: () -> Unit, onInstructions: () -> Unit) {
             Line("N O S T R O M O", Amber, bold = true)
             Spacer(Modifier.height(24.dp))
             MenuButton("START GAME", onStart, Amber)
+            MenuButton("CUSTOM GAME", onCustom)
             MenuButton("INSTRUCTIONS", onInstructions)
         }
     }
@@ -92,6 +102,97 @@ fun InstructionsScreen(onBack: () -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Set up a game before starting it: pick a scenario from [scenarios] (file name to loaded scenario),
+ * then its starting oxygen, which begins at the scenario's default, and whether oxygen is used at all.
+ * Starts from [initial], the last config chosen. [onStart] gets the config; [onBack] returns to the menu.
+ */
+@Composable
+fun CustomGameScreen(
+    scenarios: Map<String, Scenario>, initial: GameConfig, onStart: (GameConfig) -> Unit, onBack: () -> Unit,
+) {
+    var file by remember { mutableStateOf(initial.scenarioFile.takeIf { it in scenarios } ?: scenarios.keys.first()) }
+    val scenario = scenarios.getValue(file)
+    // What's typed, as text, so a half-typed or empty field doesn't fight the user.
+    var oxygenText by remember { mutableStateOf((initial.oxygenStart ?: scenario.rules.oxygenStart).toString()) }
+    var oxygenUsed by remember { mutableStateOf(initial.oxygenUsed ?: scenario.rules.oxygenUsed) }
+    val oxygen = oxygenText.toIntOrNull()?.takeIf { it >= 0 }
+    // Only check the number while it matters: with oxygen off, it's never used.
+    val valid = !oxygenUsed || (oxygen != null && oxygen > 0)
+
+    Screen {
+        Column(
+            Modifier.align(Alignment.Center).widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Line("CUSTOM GAME", Amber, bold = true)
+            Spacer(Modifier.height(8.dp))
+
+            Line("SCENARIO", Amber)
+            scenarios.forEach { (name, s) ->
+                Choice(s.name, selected = name == file, onClick = {
+                    if (name == file) return@Choice
+                    file = name
+                    // A new scenario brings its own default.
+                    oxygenText = s.rules.oxygenStart.toString()
+                    oxygenUsed = s.rules.oxygenUsed
+                })
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Line("OXYGEN", Amber)
+            Choice("Oxygen runs out", selected = oxygenUsed, onClick = { oxygenUsed = !oxygenUsed })
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val color = if (oxygenUsed) Green else DimGreen
+                Line("Starting oxygen", color)
+                NumberField(oxygenText, { text -> oxygenText = text.filter(Char::isDigit).take(6) }, enabled = oxygenUsed, Modifier.weight(1f))
+            }
+            Line("Default for ${scenario.name}: ${scenario.rules.oxygenStart}", DimGreen)
+            if (!valid) Line("Enter a starting oxygen above 0.", Red)
+
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MenuButton("MAIN MENU", onBack, Modifier.weight(1f))
+                MenuButton("START", {
+                    if (!valid) return@MenuButton
+                    // Overrides only where they differ from the scenario, so its own rules show through.
+                    onStart(
+                        GameConfig(
+                            scenarioFile = file,
+                            oxygenStart = oxygen?.takeIf { oxygenUsed && it != scenario.rules.oxygenStart },
+                            oxygenUsed = oxygenUsed.takeIf { it != scenario.rules.oxygenUsed },
+                        ),
+                    )
+                }, Modifier.weight(1f), if (valid) Amber else DimGreen)
+            }
+        }
+    }
+}
+
+/** A choice that's on or off: "[x] label" or "[ ] label", tapped to pick it. */
+@Composable
+private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 6.dp)) {
+        Line("${if (selected) "[x]" else "[ ]"} $label", if (selected) Amber else Green, bold = selected)
+    }
+}
+
+/** A terminal-style text field for a whole number. */
+@Composable
+private fun NumberField(text: String, onChange: (String) -> Unit, enabled: Boolean, modifier: Modifier) {
+    val color = if (enabled) Green else DimGreen
+    BasicTextField(
+        value = text,
+        onValueChange = onChange,
+        enabled = enabled,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        textStyle = TextStyle(color = color, fontFamily = FontFamily.Monospace, fontSize = MaterialTheme.typography.bodyMedium.fontSize),
+        cursorBrush = SolidColor(color),
+        modifier = modifier.border(1.dp, color, RectangleShape).padding(horizontal = 8.dp, vertical = 8.dp),
+    )
 }
 
 /** One page of the instructions. Lines starting "# " are subheadings; empty lines are gaps. */
@@ -167,6 +268,7 @@ private val PAGES = listOf(
         "",
         "# Oxygen",
         "Oxygen runs down all the time, shown at the top of the screen. Every living crewmember increases the rate of oxygen depletion.",
+        "Custom Game can change how much oxygen there is to start with, or switch oxygen off so it never runs out.",
     )),
 )
 

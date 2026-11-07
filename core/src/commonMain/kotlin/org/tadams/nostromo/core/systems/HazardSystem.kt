@@ -19,7 +19,7 @@ import org.tadams.nostromo.core.scenario.RoomKind
  * - **Fire** adds `fireDamagePercent` every `fireIntervalSeconds` until fought out. Fire never spreads,
  *   as in the original. A room can catch fire again later; the fight count starts afresh.
  * - **Oxygen**: each crew member breathing (loyal, in play) uses `oxygenPerCrewSecond`. A warning at
- *   `oxygenCriticalAt`; at 0 the game ends.
+ *   `oxygenCriticalAt`; at 0 the game ends. With `oxygenUsed` off, none of this happens.
  */
 internal object HazardSystem {
 
@@ -52,6 +52,7 @@ internal object HazardSystem {
         }
 
         val ship = world.ship
+        if (!rules.oxygenUsed) return
         val breathing = world.actors.values.count { it.isLoyalCrew && !it.outOfPlay }
         ship.oxygen = (ship.oxygen - breathing * rules.oxygenPerCrewSecond / Time.TICKS_PER_SECOND).coerceAtLeast(0.0)
         if (!ship.oxygenWarned && ship.oxygen <= rules.oxygenCriticalAt) {

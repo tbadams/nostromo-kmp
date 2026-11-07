@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Generate the "original layout" scenario JSON from the 1984 game's map tables.
+"""Generate the scenario JSON from the 1984 game's map tables: its long game, and its short game.
 
-Usage: python3 -I tools/make_scenario.py <out.json>
+Usage: python3 -I tools/make_scenario.py <out-dir>
+Writes <out-dir>/original.json (the long game) and <out-dir>/short.json (the short game).
 
 Needs reference/extract/block4.bin (see reference/README.md). Only the map's structure
 (which rooms connect to which, on which deck, through which ducts) is taken from the
@@ -63,6 +64,17 @@ CREW = [
 # Hidden roles: anyone can be the android or the creature's host (docs/brainstorm.md §6), rather
 # than the original's fixed lists.
 ROLES = {"android": {"pick": "any"}, "host": {"pick": "any"}}
+
+# The original's short game (docs/mechanics.md §1-2): only Ripley, Lambert and Parker's stand-ins,
+# all in the command center, with their short-game health (the original's minus 1, as above) and
+# morale; no android and no host. Everything else is as in the long game.
+SHORT_CREW = {
+    # name:       (health, base morale)
+    "Roby":      (3, 3),
+    "Melkonis":  (3, 3),
+    "Hunter":    (5, 4),
+}
+SHORT_START = "command-center"
 
 # Every grille starts in place except this room's (docs/mechanics.md §3).
 OPEN_GRILLES = {"corridor-6"}
@@ -154,7 +166,7 @@ def links_from(directed, kind_of):
     return links
 
 
-def main(out_path):
+def main(out_dir):
     room_count = len(ROOMS)
     rooms = [{"id": rid, "name": name, "deck": deck(i), **({"grilleRemoved": True} if rid in OPEN_GRILLES else {}),
               **({"features": FEATURES[rid]} if rid in FEATURES else {})}
@@ -193,8 +205,21 @@ def main(out_path):
 
     scenario = {"id": "original", "name": "Original layout", "rooms": rooms, "links": links, "actors": actors,
                 "roles": ROLES, "itemTypes": item_types, "items": items}
-    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(out_path).write_text(json.dumps(scenario, indent=2) + "\n")
+
+    short_actors = []
+    for actor in actors:
+        if actor["kind"] != "crew":
+            short_actors.append(actor)
+        elif actor["name"] in SHORT_CREW:
+            health, morale = SHORT_CREW[actor["name"]]
+            short_actors.append({**actor, "room": SHORT_START, "health": health, "morale": morale})
+    short = {**scenario, "id": "short", "name": "Short game", "actors": short_actors}
+    del short["roles"]  # the default: no android, no host
+
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "original.json").write_text(json.dumps(scenario, indent=2) + "\n")
+    (out / "short.json").write_text(json.dumps(short, indent=2) + "\n")
 
     kinds = {}
     for link in links:

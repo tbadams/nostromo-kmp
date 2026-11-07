@@ -1,0 +1,1184 @@
+{
+  "id": "short",
+  "name": "Short game",
+  "rooms": [
+    {
+      "id": "airlock-1",
+      "name": "Airlock 1",
+      "deck": "upper",
+      "features": [
+        "airlock"
+      ]
+    },
+    {
+      "id": "airlock-2",
+      "name": "Airlock 2",
+      "deck": "upper",
+      "features": [
+        "airlock"
+      ]
+    },
+    {
+      "id": "armory",
+      "name": "Armory",
+      "deck": "middle"
+    },
+    {
+      "id": "cargo-pod-1",
+      "name": "Cargo Pod 1",
+      "deck": "lower"
+    },
+    {
+      "id": "cargo-pod-2",
+      "name": "Cargo Pod 2",
+      "deck": "lower"
+    },
+    {
+      "id": "cargo-pod-3",
+      "name": "Cargo Pod 3",
+      "deck": "lower"
+    },
+    {
+      "id": "command-center",
+      "name": "Command Center",
+      "deck": "middle",
+      "features": [
+        "destructControls",
+        "keySystem"
+      ]
+    },
+    {
+      "id": "computer-room",
+      "name": "Computer Room",
+      "deck": "upper",
+      "features": [
+        "keySystem"
+      ]
+    },
+    {
+      "id": "corridor-1",
+      "name": "Corridor 1",
+      "deck": "middle"
+    },
+    {
+      "id": "corridor-2",
+      "name": "Corridor 2",
+      "deck": "middle"
+    },
+    {
+      "id": "corridor-3",
+      "name": "Corridor 3",
+      "deck": "middle"
+    },
+    {
+      "id": "corridor-4",
+      "name": "Corridor 4",
+      "deck": "middle"
+    },
+    {
+      "id": "corridor-5",
+      "name": "Corridor 5",
+      "deck": "middle"
+    },
+    {
+      "id": "corridor-6",
+      "name": "Corridor 6",
+      "deck": "upper",
+      "grilleRemoved": true,
+      "features": [
+        "airlockControls"
+      ]
+    },
+    {
+      "id": "corridor-7",
+      "name": "Corridor 7",
+      "deck": "lower"
+    },
+    {
+      "id": "cryo-vault",
+      "name": "Cryo Vault",
+      "deck": "middle",
+      "features": [
+        "hypersleep"
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering",
+      "deck": "lower"
+    },
+    {
+      "id": "engine-1",
+      "name": "Engine Room 1",
+      "deck": "middle",
+      "features": [
+        "flammable"
+      ]
+    },
+    {
+      "id": "engine-2",
+      "name": "Engine Room 2",
+      "deck": "middle",
+      "features": [
+        "flammable"
+      ]
+    },
+    {
+      "id": "engine-3",
+      "name": "Engine Room 3",
+      "deck": "middle",
+      "features": [
+        "flammable"
+      ]
+    },
+    {
+      "id": "engineering-stores",
+      "name": "Engineering Stores",
+      "deck": "lower"
+    },
+    {
+      "id": "infirmary",
+      "name": "Infirmary",
+      "deck": "middle"
+    },
+    {
+      "id": "infirmary-stores",
+      "name": "Infirmary Stores",
+      "deck": "middle"
+    },
+    {
+      "id": "laboratory",
+      "name": "Laboratory",
+      "deck": "middle"
+    },
+    {
+      "id": "lab-stores",
+      "name": "Laboratory Stores",
+      "deck": "middle"
+    },
+    {
+      "id": "life-support",
+      "name": "Life Support",
+      "deck": "lower",
+      "features": [
+        "keySystem"
+      ]
+    },
+    {
+      "id": "living-quarters",
+      "name": "Living Quarters",
+      "deck": "upper"
+    },
+    {
+      "id": "mess",
+      "name": "Mess",
+      "deck": "upper"
+    },
+    {
+      "id": "recreation",
+      "name": "Recreation Area",
+      "deck": "upper"
+    },
+    {
+      "id": "stores-1",
+      "name": "Stores 1",
+      "deck": "middle"
+    },
+    {
+      "id": "stores-2",
+      "name": "Stores 2",
+      "deck": "upper"
+    },
+    {
+      "id": "stores-3",
+      "name": "Stores 3",
+      "deck": "upper"
+    },
+    {
+      "id": "shuttle-bay",
+      "name": "Shuttle Bay",
+      "deck": "lower",
+      "features": [
+        "keySystem",
+        "intruderEntry"
+      ]
+    },
+    {
+      "id": "shuttle-stores",
+      "name": "Shuttle Stores",
+      "deck": "lower"
+    },
+    {
+      "id": "shuttle",
+      "name": "Shuttle",
+      "deck": "shuttle",
+      "features": [
+        "launch"
+      ]
+    },
+    {
+      "id": "airlock-1-duct",
+      "name": "Airlock 1 duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "airlock-2-duct",
+      "name": "Airlock 2 duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "armory-duct",
+      "name": "Armory duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "cargo-pod-1-duct",
+      "name": "Cargo Pod 1 duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "cargo-pod-2-duct",
+      "name": "Cargo Pod 2 duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "cargo-pod-3-duct",
+      "name": "Cargo Pod 3 duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "command-center-duct",
+      "name": "Command Center duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "computer-room-duct",
+      "name": "Computer Room duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-1-duct",
+      "name": "Corridor 1 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-2-duct",
+      "name": "Corridor 2 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-3-duct",
+      "name": "Corridor 3 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-4-duct",
+      "name": "Corridor 4 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-5-duct",
+      "name": "Corridor 5 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-6-duct",
+      "name": "Corridor 6 duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "corridor-7-duct",
+      "name": "Corridor 7 duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "cryo-vault-duct",
+      "name": "Cryo Vault duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "engineering-duct",
+      "name": "Engineering duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "engine-1-duct",
+      "name": "Engine Room 1 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "engine-2-duct",
+      "name": "Engine Room 2 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "engine-3-duct",
+      "name": "Engine Room 3 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "engineering-stores-duct",
+      "name": "Engineering Stores duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "infirmary-duct",
+      "name": "Infirmary duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "infirmary-stores-duct",
+      "name": "Infirmary Stores duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "laboratory-duct",
+      "name": "Laboratory duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "lab-stores-duct",
+      "name": "Laboratory Stores duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "life-support-duct",
+      "name": "Life Support duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "living-quarters-duct",
+      "name": "Living Quarters duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "mess-duct",
+      "name": "Mess duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "recreation-duct",
+      "name": "Recreation Area duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "stores-1-duct",
+      "name": "Stores 1 duct",
+      "deck": "middle",
+      "kind": "duct"
+    },
+    {
+      "id": "stores-2-duct",
+      "name": "Stores 2 duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "stores-3-duct",
+      "name": "Stores 3 duct",
+      "deck": "upper",
+      "kind": "duct"
+    },
+    {
+      "id": "shuttle-bay-duct",
+      "name": "Shuttle Bay duct",
+      "deck": "lower",
+      "kind": "duct"
+    },
+    {
+      "id": "shuttle-stores-duct",
+      "name": "Shuttle Stores duct",
+      "deck": "lower",
+      "kind": "duct"
+    }
+  ],
+  "links": [
+    {
+      "from": "airlock-1",
+      "to": "corridor-6"
+    },
+    {
+      "from": "airlock-2",
+      "to": "corridor-6"
+    },
+    {
+      "from": "armory",
+      "to": "corridor-3"
+    },
+    {
+      "from": "cargo-pod-1",
+      "to": "cargo-pod-2"
+    },
+    {
+      "from": "cargo-pod-2",
+      "to": "shuttle-bay"
+    },
+    {
+      "from": "cargo-pod-2",
+      "to": "corridor-7"
+    },
+    {
+      "from": "cargo-pod-2",
+      "to": "cargo-pod-3"
+    },
+    {
+      "from": "cargo-pod-2",
+      "to": "corridor-2",
+      "kind": "ladder"
+    },
+    {
+      "from": "command-center",
+      "to": "corridor-1"
+    },
+    {
+      "from": "computer-room",
+      "to": "corridor-6"
+    },
+    {
+      "from": "computer-room",
+      "to": "stores-2"
+    },
+    {
+      "from": "corridor-1",
+      "to": "infirmary"
+    },
+    {
+      "from": "corridor-1",
+      "to": "corridor-2"
+    },
+    {
+      "from": "corridor-1",
+      "to": "laboratory"
+    },
+    {
+      "from": "corridor-1",
+      "to": "living-quarters",
+      "kind": "ladder"
+    },
+    {
+      "from": "corridor-2",
+      "to": "corridor-3"
+    },
+    {
+      "from": "corridor-2",
+      "to": "cryo-vault"
+    },
+    {
+      "from": "corridor-2",
+      "to": "corridor-5"
+    },
+    {
+      "from": "corridor-3",
+      "to": "infirmary-stores"
+    },
+    {
+      "from": "corridor-3",
+      "to": "engine-1"
+    },
+    {
+      "from": "corridor-3",
+      "to": "corridor-4"
+    },
+    {
+      "from": "corridor-4",
+      "to": "corridor-5"
+    },
+    {
+      "from": "corridor-4",
+      "to": "engine-2"
+    },
+    {
+      "from": "corridor-5",
+      "to": "lab-stores"
+    },
+    {
+      "from": "corridor-5",
+      "to": "stores-1"
+    },
+    {
+      "from": "corridor-5",
+      "to": "engine-3"
+    },
+    {
+      "from": "corridor-6",
+      "to": "mess"
+    },
+    {
+      "from": "corridor-6",
+      "to": "stores-3"
+    },
+    {
+      "from": "corridor-7",
+      "to": "life-support"
+    },
+    {
+      "from": "engineering",
+      "to": "shuttle-bay"
+    },
+    {
+      "from": "engineering",
+      "to": "engineering-stores"
+    },
+    {
+      "from": "living-quarters",
+      "to": "recreation"
+    },
+    {
+      "from": "living-quarters",
+      "to": "mess"
+    },
+    {
+      "from": "mess",
+      "to": "recreation"
+    },
+    {
+      "from": "shuttle-bay",
+      "to": "shuttle-stores"
+    },
+    {
+      "from": "shuttle-bay",
+      "to": "shuttle"
+    },
+    {
+      "from": "airlock-1",
+      "to": "airlock-1-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "airlock-2",
+      "to": "airlock-2-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "armory",
+      "to": "armory-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "cargo-pod-1",
+      "to": "cargo-pod-1-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "cargo-pod-2",
+      "to": "cargo-pod-2-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "cargo-pod-3",
+      "to": "cargo-pod-3-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "command-center",
+      "to": "command-center-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "computer-room",
+      "to": "computer-room-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-1",
+      "to": "corridor-1-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-2",
+      "to": "corridor-2-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-3",
+      "to": "corridor-3-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-4",
+      "to": "corridor-4-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-5",
+      "to": "corridor-5-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-6",
+      "to": "corridor-6-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "corridor-7",
+      "to": "corridor-7-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "cryo-vault",
+      "to": "cryo-vault-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "engineering",
+      "to": "engineering-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "engine-1",
+      "to": "engine-1-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "engine-2",
+      "to": "engine-2-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "engine-3",
+      "to": "engine-3-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "engineering-stores",
+      "to": "engineering-stores-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "infirmary",
+      "to": "infirmary-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "infirmary-stores",
+      "to": "infirmary-stores-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "laboratory",
+      "to": "laboratory-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "lab-stores",
+      "to": "lab-stores-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "life-support",
+      "to": "life-support-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "living-quarters",
+      "to": "living-quarters-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "mess",
+      "to": "mess-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "recreation",
+      "to": "recreation-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "stores-1",
+      "to": "stores-1-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "stores-2",
+      "to": "stores-2-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "stores-3",
+      "to": "stores-3-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "shuttle-bay",
+      "to": "shuttle-bay-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "shuttle-stores",
+      "to": "shuttle-stores-duct",
+      "kind": "grille"
+    },
+    {
+      "from": "airlock-1-duct",
+      "to": "stores-2-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "airlock-1-duct",
+      "to": "mess-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "airlock-1-duct",
+      "to": "living-quarters-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "airlock-2-duct",
+      "to": "mess-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "airlock-2-duct",
+      "to": "cargo-pod-1-duct",
+      "kind": "duct",
+      "oneWay": true
+    },
+    {
+      "from": "airlock-2-duct",
+      "to": "recreation-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "armory-duct",
+      "to": "corridor-4-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "armory-duct",
+      "to": "infirmary-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "cargo-pod-1-duct",
+      "to": "shuttle-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "cargo-pod-1-duct",
+      "to": "corridor-7-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "cargo-pod-2-duct",
+      "to": "corridor-7-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "cargo-pod-3-duct",
+      "to": "corridor-7-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "cargo-pod-3-duct",
+      "to": "engineering-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "command-center-duct",
+      "to": "corridor-1-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "computer-room-duct",
+      "to": "engine-2-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "computer-room-duct",
+      "to": "corridor-6-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-1-duct",
+      "to": "infirmary-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-1-duct",
+      "to": "laboratory-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-2-duct",
+      "to": "corridor-3-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-2-duct",
+      "to": "corridor-5-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-3-duct",
+      "to": "infirmary-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-3-duct",
+      "to": "infirmary-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-4-duct",
+      "to": "engine-2-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-4-duct",
+      "to": "stores-1-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-4-duct",
+      "to": "cryo-vault-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-5-duct",
+      "to": "lab-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-5-duct",
+      "to": "laboratory-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-6-duct",
+      "to": "stores-2-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-6-duct",
+      "to": "stores-3-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-6-duct",
+      "to": "mess-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "corridor-7-duct",
+      "to": "life-support-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "engineering-duct",
+      "to": "engineering-stores-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "engineering-duct",
+      "to": "shuttle-bay-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "engine-1-duct",
+      "to": "engine-2-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "engine-2-duct",
+      "to": "engine-3-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "engine-2-duct",
+      "to": "life-support-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "lab-stores-duct",
+      "to": "stores-1-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "living-quarters-duct",
+      "to": "recreation-duct",
+      "kind": "duct"
+    },
+    {
+      "from": "stores-3-duct",
+      "to": "airlock-2-duct",
+      "kind": "duct",
+      "oneWay": true
+    },
+    {
+      "from": "shuttle-bay-duct",
+      "to": "shuttle-stores-duct",
+      "kind": "duct"
+    }
+  ],
+  "actors": [
+    {
+      "id": "roby",
+      "name": "Roby",
+      "kind": "crew",
+      "room": "command-center",
+      "health": 3,
+      "morale": 3,
+      "actionSeconds": {
+        "removeGrille": 13.3
+      },
+      "catchDifficulty": 13
+    },
+    {
+      "id": "melkonis",
+      "name": "Melkonis",
+      "kind": "crew",
+      "room": "command-center",
+      "health": 3,
+      "speedPenaltySeconds": 0.2,
+      "morale": 3,
+      "actionSeconds": {
+        "removeGrille": 13.3
+      },
+      "catchDifficulty": 13
+    },
+    {
+      "id": "hunter",
+      "name": "Hunter",
+      "kind": "crew",
+      "room": "command-center",
+      "health": 5,
+      "speedPenaltySeconds": 0.7,
+      "morale": 4,
+      "actionSeconds": {
+        "removeGrille": 5.9
+      },
+      "catchDifficulty": 15
+    },
+    {
+      "id": "creature",
+      "name": "Creature",
+      "kind": "creature",
+      "room": "corridor-4-duct",
+      "brain": "wumpus",
+      "health": 15,
+      "actionSeconds": {
+        "move": 5.9,
+        "attack": 4.4,
+        "prowl": 5.9,
+        "removeGrille": 3.7
+      },
+      "grilleMoveSeconds": 3.7
+    },
+    {
+      "id": "cat",
+      "name": "Spot",
+      "kind": "animal",
+      "room": "recreation",
+      "brain": "cat",
+      "health": 1,
+      "actionSeconds": {
+        "move": 18.9
+      }
+    }
+  ],
+  "itemTypes": [
+    {
+      "id": "prod",
+      "name": "Electric Prod",
+      "damage": 1,
+      "morale": 1
+    },
+    {
+      "id": "incinerator",
+      "name": "Incinerator",
+      "damage": 1,
+      "morale": 2
+    },
+    {
+      "id": "tracker",
+      "name": "Tracker",
+      "damage": 1,
+      "morale": 0,
+      "charges": 1,
+      "breaksWhenSpent": true,
+      "detects": true
+    },
+    {
+      "id": "extinguisher",
+      "name": "Fire Extinguisher",
+      "damage": 0,
+      "morale": 1,
+      "charges": 3,
+      "scares": true,
+      "fightsFire": true
+    },
+    {
+      "id": "harpoon",
+      "name": "Harpoon Gun",
+      "damage": 5,
+      "morale": 2,
+      "charges": 1,
+      "roomDamagePercent": 75,
+      "effect": "killRoom"
+    },
+    {
+      "id": "laser",
+      "name": "Laser Pistol",
+      "damage": 2,
+      "morale": 2,
+      "charges": 8,
+      "roomDamagePercent": 30
+    },
+    {
+      "id": "net",
+      "name": "Net",
+      "damage": 0,
+      "morale": 0,
+      "charges": 1,
+      "breaksWhenSpent": true,
+      "effect": "freeze",
+      "catchBonus": 4
+    },
+    {
+      "id": "cat-box",
+      "name": "Cat Box",
+      "damage": 0,
+      "morale": 0,
+      "catchBonus": 0
+    },
+    {
+      "id": "spanner",
+      "name": "Spanner",
+      "damage": 1,
+      "morale": 1
+    }
+  ],
+  "items": [
+    {
+      "id": "prod-1",
+      "type": "prod",
+      "room": "lab-stores"
+    },
+    {
+      "id": "prod-2",
+      "type": "prod",
+      "room": "infirmary"
+    },
+    {
+      "id": "prod-3",
+      "type": "prod",
+      "room": "engineering-stores"
+    },
+    {
+      "id": "incinerator-1",
+      "type": "incinerator",
+      "room": "command-center"
+    },
+    {
+      "id": "incinerator-2",
+      "type": "incinerator",
+      "room": "command-center"
+    },
+    {
+      "id": "incinerator-3",
+      "type": "incinerator",
+      "room": "engineering"
+    },
+    {
+      "id": "tracker-1",
+      "type": "tracker",
+      "room": "command-center"
+    },
+    {
+      "id": "tracker-2",
+      "type": "tracker",
+      "room": "engineering"
+    },
+    {
+      "id": "extinguisher-1",
+      "type": "extinguisher",
+      "room": "mess"
+    },
+    {
+      "id": "extinguisher-2",
+      "type": "extinguisher",
+      "room": "engine-1"
+    },
+    {
+      "id": "extinguisher-3",
+      "type": "extinguisher",
+      "room": "engine-2"
+    },
+    {
+      "id": "extinguisher-4",
+      "type": "extinguisher",
+      "room": "engine-3"
+    },
+    {
+      "id": "harpoon-1",
+      "type": "harpoon",
+      "room": "shuttle-bay"
+    },
+    {
+      "id": "laser-1",
+      "type": "laser",
+      "room": "armory"
+    },
+    {
+      "id": "laser-2",
+      "type": "laser",
+      "room": "armory"
+    },
+    {
+      "id": "laser-3",
+      "type": "laser",
+      "room": "armory"
+    },
+    {
+      "id": "net-1",
+      "type": "net",
+      "room": "lab-stores"
+    },
+    {
+      "id": "cat-box-1",
+      "type": "cat-box",
+      "room": "laboratory"
+    },
+    {
+      "id": "spanner-1",
+      "type": "spanner",
+      "room": "stores-3"
+    },
+    {
+      "id": "spanner-2",
+      "type": "spanner",
+      "room": "engineering-stores"
+    }
+  ]
+}

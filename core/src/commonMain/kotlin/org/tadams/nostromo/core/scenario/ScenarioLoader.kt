@@ -107,6 +107,7 @@ object ScenarioValidator {
         if (scenario.rules.creatureGrilleMoveOdds !in 0..ODDS) add("rules.creatureGrilleMoveOdds must be 0-$ODDS")
         if (scenario.rules.fleeDamageDivisor < 1) add("rules.fleeDamageDivisor must be at least 1")
         if (scenario.rules.netFreezeSeconds <= 0) add("rules.netFreezeSeconds must be positive")
+        if (scenario.rules.oxygenStart < 0) add("rules.oxygenStart must not be negative")
         with(scenario.rules) {
             if (destructSeconds <= 0 || fireIntervalSeconds <= 0) add("rules.destructSeconds and rules.fireIntervalSeconds must be positive")
             if (oxygenStart <= 0 || oxygenPerCrewSecond < 0) add("rules.oxygenStart must be positive and rules.oxygenPerCrewSecond not negative")
