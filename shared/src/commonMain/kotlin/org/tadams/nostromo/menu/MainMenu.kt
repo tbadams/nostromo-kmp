@@ -12,7 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeContent
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -168,7 +172,7 @@ private val PAGES = listOf(
 
 @Composable
 private fun Screen(content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
-    Box(Modifier.fillMaxSize().background(Background).safeContentPadding().padding(24.dp), content = content)
+    Box(Modifier.fillMaxSize().background(Background).windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Vertical)).padding(24.dp), content = content)
 }
 
 @Composable
