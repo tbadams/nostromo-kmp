@@ -250,6 +250,12 @@ Worth doing, but not needed for the hack.
 - Adjust log width
 - Current'y says "Creature opens grate in Room" when a grille opens under you, might be more immersive to say "grate opnes"
 - Quit to main menu button?
+- Enhance ship rooms
+  - Infirmary Heals
+  - Engineering storage could have coolant that needs to be brought to shuttle if more than 2 survivors are leaving
+  - Computer room... ?
+- New items
+  - Cat food: place to attract cat to a room wherever it is, cat spends some time eating it.
 
 ## Decisions
 
