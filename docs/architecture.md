@@ -235,12 +235,21 @@ Worth doing, but not needed for the hack.
 - Prettier Map, more like orig, maybe as optional add on for scenario
 - The duct map nodes are too damn small . separately or in addition, a11y clickability for map nodes
 - More varied / complex AI types
+  - chase: simple "I saw where you went and will attempt to follow." adjust timing so it's not instant death.
   - "Storyteller" amp up aggression / cheat towards people as goes longer without interaction, give break after
   - hunter: keep cache of map tiles searched and pick them over looking for crew
   - stealth: when cheat, prioritize lone crew
   - sabatoeur: mre intentional about damaging the ship, somehow
+  - listener: can hear crew actions in nearby rooms and investigate
+  - blind: can ONLY find crew through action sound, except for maybe a small lurk chance. Faster attacker though.
   - brainstorm more
+- Android (robot) shouldn't breathe
+- Android (phone) shouldn't restart state on rotate
+- 600.dp is compact mode cutoff, appropriate for mobile apps, shrinking a web window becomes unusable before that however
+- Non compact web map should still scroll when it needs to ange have some minimuimm height for stuff. help android landscape too.
+- Adjust log width
 - Current'y says "Creature opens grate in Room" when a grille opens under you, might be more immersive to say "grate opnes"
+- Quit to main menu button?
 
 ## Decisions
 
