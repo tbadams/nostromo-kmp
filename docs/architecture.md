@@ -278,6 +278,10 @@ Worth doing, but not needed for the hack.
 - **No friendly fire by default.** As in the original, crew can attack only the creature (later also the revealed android). `Rules.friendlyFire` turns crew-on-crew attacks back on; the `:core` test fixtures switch it on because it's the simplest way to cause damage.
 - **The obedience gate doesn't hide options.** A frightened crew member is still offered "Attack" and refuses it when it starts (`TOO_SCARED`), as in the original, so the player learns why.
 - **UI look:** terminal style. Green outlines with a faded fill, not Material defaults. The palette is in `shared/.../ui/Colors.kt`.
+- Long move\
+- multicrew select?!?
+- body stealing, eggmorphing
+  - egg replaces body, when crew enters, facehugger replaces egg, slow, not particularly sturdy, but if it gets you, youre got. Will eventually hatch new creature
 
 ### Known architectural debt
 
